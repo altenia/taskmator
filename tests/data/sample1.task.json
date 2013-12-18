@@ -1,0 +1,82 @@
+{
+	"@namespaces": {
+		"core": "core",
+		"util": "contrib/utils"
+	},
+
+	"@aliases": {
+		"ct": "core.Composite",
+		"cl": "core.CommandLine",
+		"cron": "core.Cron"
+	},
+	"@version": "1.0",
+
+	"@params": {
+		"PROJECT_NAME": "$PROJECT_NAME"
+	},
+
+	"ct prepare": {
+		"@description": "",
+		"@params": {
+			"@load": "prepare.params.json",
+			"BRIX_USER": "brixserver",
+			"KEY_LOCATION": "/home/ubuntu/.ssh/azurekey.pem",
+			"JENKINS_HOME":"/home/ubuntu/workspaces/jenkins/"
+		},
+
+		"@execMode": "sequential",
+		
+		"@haltOnError": "true",
+
+		"@tasks": [
+			{"@task": "cl remote_pull_repo", "@params": {"command":"cd ~/applications/{PROJECT_NAME}; git pull", "ssh":true},"@haltOnError": true },
+	        {"@task": "remote_change_group", "@params": {"command":"sudo chgrp -R {BRIX_USER} ~/applications/{PROJECT_NAME}", "ssh":true} },
+	        {"@task": "remote_closure_comp", "@params": {"command":"cd ~/applications/{PROJECT_NAME}/js/; ./build.sh", "ssh":true} }
+		]
+	},
+
+	"ct compile": {
+		"@load": "compile.task.json"
+	},
+
+	"cl default": {
+		"@description": "Executes the application",
+		"@params": {
+			"command":"cd ~/applications/{PROJECT_NAME}; node "
+		},
+
+		"@haltOnError": true,
+
+		"@dependsOn": "prepare"
+	},
+
+	"ct check_proc": {
+		"@description": "Checks a process",
+		"@params": {
+			"command":"cd ~/applications/{PROJECT_NAME}; node "
+		},
+
+		"@execMode": "sequential",
+		"@haltOnError": true,
+
+		"@tasks": [
+			{"@task": "cl get_proc", "@params": {"command":"ps -ef | grep {PROC_NAME}"},"@haltOnError": true },
+	        {"@task": "cl remote_change_group", "@params": {"command":"sudo chgrp -R {BRIX_USER} ~/applications/{PROJECT_NAME}", "ssh":true} }
+		]
+
+	},
+
+	"cron monitorprocess": {
+		"@description": "Executes the application",
+		"@params": {
+			"expression": "0 * * * * ",
+			"task": "check_proc"
+		},
+
+		"@execMode": "sequential",
+
+		"@haltOnError": true,
+
+		"@dependsOn": "prepare"
+	}
+}
