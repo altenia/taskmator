@@ -4,8 +4,8 @@ import json
 
 class TaskFactory:
     ROOT_NS = "taskmator.task"
-    VALID_ATTRS = [u'namespaces', u'aliases', u'version', u'tasks', u'task', 
-        u'description', u'params', u'execMode', u'load', u'haltOnError', u'dependsOn'
+    VALID_ATTRS = [u'aliases', u'description', u'dependsOn', u'version', u'tasks', u'task', 
+        u'modelUri', u'params', u'execMode', u'namespaces', u'load', u'haltOnError', u'type'
         ]
 
     def createTask(self, parent, type, name):
@@ -50,13 +50,29 @@ class TaskFactory:
 
         newTask = self.createTask(task, fqnType, typeAndTaskname[1])
 
+        taskModel = propVal
         # Recursively load task
-        self.loadTask(newTask, propVal)
+        print ("**" + str(type(propVal)))
+        if (type(propVal) is unicode):
+            # if it is string, it can only be load:
+            configFile = propVal
+            if (not configFile.startswith('/')):
+                rootTask = task.getRootParent();
+                pathSeparatorPos = rootTask.modelUri.rfind('/')
+                directory = rootTask.modelUri[0:pathSeparatorPos+1]
+                configFile = directory + configFile
+            print("opening: " + configFile)
+            taskModel = self.loadConfig(configFile)
+
+        # is a dictionary (i.e. representation of task)
+        self.loadTask(newTask, taskModel)
 
         return newTask
 
     def loadTask(self, task, taskModel):
         # handle all attributes first
+        if (u'@modelUri' in taskModel):
+            task.modelUri = taskModel['@modelUri']
         for propKey, propVal in taskModel.iteritems():
             if (propKey[0] == u'@'): 
                 # all property that starts with '@' is task attribute
@@ -76,8 +92,12 @@ class TaskFactory:
         """
         configFile = open(configFileName, "r")
         configJson = configFile.read();
-        modelRoot = json.loads(configJson)
+        model = json.loads(configJson)
+        return model
 
+    def loadRoot(self, configFilename):
+        modelRoot = self.loadConfig(configFilename)
+        modelRoot[u'@modelUri'] = configFilename
         rootTask =  self.createTask(None, self.ROOT_NS + ".core.CompositeTask", "root")
         self.loadTask(rootTask, modelRoot)
 
@@ -117,4 +137,3 @@ class TaskFactory:
             if module == None:
                 return None
         return module
-

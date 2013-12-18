@@ -18,7 +18,7 @@ class CoreTest(unittest.TestCase):
     def testTaskFactory(self):
         # make sure the shuffled sequence does not lose any elements
         fac = factory.TaskFactory()
-        task = fac.loadConfig(self.ROOT_PATH + "tests/data/sample1.task.json")
+        task = fac.loadRoot(self.ROOT_PATH + "tests/data/sample1.task.json")
 
     def main():
         unittest.main()

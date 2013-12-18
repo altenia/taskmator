@@ -18,7 +18,6 @@
 	"ct prepare": {
 		"@description": "",
 		"@params": {
-			"@load": "prepare.params.json",
 			"BRIX_USER": "brixserver",
 			"KEY_LOCATION": "/home/ubuntu/.ssh/azurekey.pem",
 			"JENKINS_HOME":"/home/ubuntu/workspaces/jenkins/"
@@ -35,9 +34,7 @@
 		]
 	},
 
-	"ct compile": {
-		"@load": "compile.task.json"
-	},
+	"ct compile": "compile.task.json",
 
 	"cl default": {
 		"@description": "Executes the application",

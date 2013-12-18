@@ -7,6 +7,7 @@ abstract class for all Task
 class Task:
     __metaclass__ = abc.ABCMeta
 
+    modelUri = None
     aliases = None
     namespaces = None
     description = None
@@ -24,6 +25,12 @@ class Task:
 
     def getParent(self):
         return self._parent
+
+    def getRootParent(self):
+        node = self
+        while node._parent is not None:
+            node = node._parent
+        return node
 
     def addChild(self, child):
         self._children.append(child)
