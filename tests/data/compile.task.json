@@ -1,0 +1,9 @@
+{
+	"@type": "core.CommandLine",
+	"@description": "Compile Tas",
+	"@params": {
+		"command":"compile {PROJECT_NAME}; "
+	},
+
+	"@haltOnError": true
+}
