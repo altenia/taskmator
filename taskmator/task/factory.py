@@ -1,3 +1,4 @@
+import logging
 import taskmator.task.core
 import json
 
@@ -7,6 +8,14 @@ class TaskFactory:
     VALID_ATTRS = [u'aliases', u'description', u'dependsOn', u'version', u'tasks', u'task', 
         u'modelUri', u'params', u'execMode', u'namespaces', u'load', u'haltOnError', u'type'
         ]
+    logger = logging.getLogger(__name__)
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
+    sh = logging.StreamHandler()
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+
+    logger.setLevel(logging.INFO)
+
 
     def createTask(self, parent, type, name):
         """
@@ -26,7 +35,7 @@ class TaskFactory:
         return task
 
     def _handleAttribute(self, task, propKey, propVal):
-        print ("Handling ("+ propKey + ", " + str(propVal) + ")")
+        self.logger.debug ("Handling attribute ("+ propKey + ", " + str(propVal) + ")")
         if (propKey in self.VALID_ATTRS):
             setattr(task, propKey, propVal)
         else:
@@ -37,6 +46,7 @@ class TaskFactory:
         """ 
         propKey is of format <type> <task name>
         """
+        self.logger.debug ("Handling taskDef ("+ propKey + ", {propVal})")
         typeAndTaskname = propKey.split(" ")
         if (len(typeAndTaskname) != 2):
             raise Exception('Invalid task declaration ' + propKey)
@@ -52,7 +62,6 @@ class TaskFactory:
 
         taskModel = propVal
         # Recursively load task
-        print ("**" + str(type(propVal)))
         if (type(propVal) is unicode):
             # if it is string, it can only be load:
             configFile = propVal
@@ -61,7 +70,7 @@ class TaskFactory:
                 pathSeparatorPos = rootTask.modelUri.rfind('/')
                 directory = rootTask.modelUri[0:pathSeparatorPos+1]
                 configFile = directory + configFile
-            print("opening: " + configFile)
+            self.logger.debug("opening: " + configFile)
             taskModel = self.loadConfig(configFile)
 
         # is a dictionary (i.e. representation of task)
@@ -76,13 +85,10 @@ class TaskFactory:
         for propKey, propVal in taskModel.iteritems():
             if (propKey[0] == u'@'): 
                 # all property that starts with '@' is task attribute
-                print ("*Handling attr: " + propKey)
                 self._handleAttribute(task, propKey[1:], propVal)
 
         for propKey, propVal in taskModel.iteritems():
-            print ("*Handling " + propKey)
             if (propKey[0] != u'@'): 
-                print ("*Handling taskDef: " + propKey)
                 # otherwise it is a task definition
                 self._handleTaskDef(task, propKey, propVal)
 
@@ -110,10 +116,8 @@ class TaskFactory:
         currTask = task
         # get the closest alias matching the typeName
 
-        print("*currTask: "+ str(currTask))
         while currTask:
             aliases = currTask.aliases
-            print("*aliases: "+ str(aliases))
             if (aliases):
                 if (typeName in aliases):
                     return aliases[typeName]
@@ -126,11 +130,11 @@ class TaskFactory:
         Get class given a fully qualified classname, None if not found 
         http://stackoverflow.com/questions/452969/does-python-have-an-equivalent-to-java-class-forname
         """
-        print("*Loading: " + fqClassname);
+        self.logger.info("Loading class: " + fqClassname);
 
         parts = fqClassname.split('.')
         modulePart = ".".join(parts[:-1])
-        print ("*__import__ "+modulePart) 
+        #print ("*__import__ "+modulePart) 
         module = __import__( modulePart )
         for attrName in parts[1:]:
             module = getattr(module, attrName, None)
