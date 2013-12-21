@@ -25,7 +25,7 @@
 
 		"@execMode": "sequential",
 		
-		"@haltOnError": "true",
+		"@haltOnError": true,
 
 		"@tasks": [
 			{"@task": "cl remote_pull_repo", "@params": {"command":"cd ~/applications/{PROJECT_NAME}; git pull", "ssh":true},"@haltOnError": true },
@@ -69,8 +69,6 @@
 			"expression": "0 * * * * ",
 			"task": "check_proc"
 		},
-
-		"@execMode": "sequential",
 
 		"@haltOnError": true,
 

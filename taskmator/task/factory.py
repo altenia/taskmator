@@ -1,20 +1,12 @@
 import logging
 import taskmator.task.core
 import json
-
+import collections
 
 class TaskFactory:
     ROOT_NS = "taskmator.task"
-    VALID_ATTRS = [u'aliases', u'description', u'dependsOn', u'version', u'tasks', u'task', 
-        u'modelUri', u'params', u'execMode', u'namespaces', u'load', u'haltOnError', u'type'
-        ]
+    
     logger = logging.getLogger(__name__)
-    formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
-    sh = logging.StreamHandler()
-    sh.setFormatter(formatter)
-    logger.addHandler(sh)
-
-    logger.setLevel(logging.INFO)
 
 
     def createTask(self, parent, type, name):
@@ -36,10 +28,11 @@ class TaskFactory:
 
     def _handleAttribute(self, task, propKey, propVal):
         self.logger.debug ("Handling attribute ("+ propKey + ", " + str(propVal) + ")")
-        if (propKey in self.VALID_ATTRS):
-            setattr(task, propKey, propVal)
-        else:
-            raise Exception('Invalid Property ' + propKey)
+        task.setAttribute(propKey, propVal)
+        #if (propKey in self.VALID_ATTRS):
+            #setattr(task, propKey, propVal)
+        #else:
+        #    raise Exception('Invalid Property ' + propKey)
 
 
     def _handleTaskDef(self, task, propKey, propVal):
@@ -98,7 +91,7 @@ class TaskFactory:
         """
         configFile = open(configFileName, "r")
         configJson = configFile.read();
-        model = json.loads(configJson)
+        model = json.loads(configJson, object_pairs_hook=collections.OrderedDict)
         return model
 
     def loadRoot(self, configFilename):
