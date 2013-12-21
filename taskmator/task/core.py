@@ -1,6 +1,11 @@
 import abc
 import logging
 import json
+import subprocess
+
+#debugger
+#import pudb; pu.db
+
 
 '''
 abstract class for all Task
@@ -12,18 +17,17 @@ class Task:
         u'modelUri', u'params', u'namespaces', u'load', u'haltOnError', u'type'
         ]
 
-    modelUri = None
-    aliases = None
-    namespaces = None
-    description = None
-    params = None
-    haltOnError = False
-
-    _parent = None
-    _children = []
-
     def __init__(self, name):
         self.name = name
+        self.__parent = None
+        self.__children = []
+
+        self.modelUri = None
+        self.aliases = None
+        self.namespaces = None
+        self.description = None
+        self.params = None
+        self.haltOnError = False
 
     def __str__(self):
         return self.__class__.__name__ + ":" + self.name;
@@ -52,15 +56,24 @@ class Task:
 
     def getRootParent(self):
         node = self
-        while node._parent is not None:
-            node = node._parent
+        while node.__parent is not None:
+            node = node.__parent
         return node
 
     def addChild(self, child):
-        self._children.append(child)
+        self.__children.append(child)
 
     def getChildren(self):
-        return self._children
+        return self.__children
+
+    def traverse(self):
+        self.__traverse(self)
+
+    def __traverse(self, node):
+        print (str(node) + "+" + str(len(node.getChildren())))
+        if (len(node.getChildren()) > 0):
+            for child in node.getChildren():
+                self.__traverse(child)
 
     def getChildAt(self, idx):
         self._children[idx]
@@ -89,20 +102,12 @@ class CompositeTask(Task):
         else:
             super(CompositeTask, self).setAttribute(attrKey, attrVal)
 
-    def traverse(self):
-        self.__traverse(self)
-
-    def __traverse(self, node):
-        print (str(node) + "+" + str(len(node.getChildren())))
-        if (len(node.getChildren()) > 0):
-            for child in node.getChildren():
-                self.__traverse(child)
 
     def execute(self):
         self.logger.info ("Executing " + str(self))
         for child in self.getChildren():
-            print (str(child))
-            #child.execute()
+            #print (str(child))
+            child.execute()
         return 0
 
 '''
@@ -120,7 +125,7 @@ class CommandLineTask(Task):
         return True
 
     def execute(self):
-        self.logger.info ("Executing " + __name__)
+        self.logger.info ("Executing " + str(self))
         cmdLine = None
         if (self.getParam('ssh', False)):
             if ( not self.hasParam('remoteLogin') or not self.hasParam('sshKeyLocation') ):
@@ -132,10 +137,11 @@ class CommandLineTask(Task):
             cmdLine = self.getParam('command')
 
         code=0; out=""
-        if (self.getParam('skipExecution', False)):
-            self.logger.debug("Skipping: " + cmdLine)
+        #if (self.getParam('skipExecution', False)):
+        if (True):
+            self.logger.info("Skipping: " + cmdLine)
         else:
-            self.logger.debug("Executing: " + cmdLine)
+            self.logger.info("Executing: " + cmdLine)
             code, out = self._runCommand(cmdLine)
 
         if (code != 0):
@@ -186,7 +192,7 @@ class CronTask(Task):
         return True
 
     def execute(self):
-        self.logger.info ("Executing " + self.__class__.__name__)
+        self.logger.info ("Executing " + str(self))
         return 0
 
 

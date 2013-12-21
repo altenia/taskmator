@@ -29,10 +29,6 @@ class TaskFactory:
     def _handleAttribute(self, task, propKey, propVal):
         self.logger.debug ("Handling attribute ("+ propKey + ", " + str(propVal) + ")")
         task.setAttribute(propKey, propVal)
-        #if (propKey in self.VALID_ATTRS):
-            #setattr(task, propKey, propVal)
-        #else:
-        #    raise Exception('Invalid Property ' + propKey)
 
 
     def _handleTaskDef(self, task, propKey, propVal):

@@ -30,7 +30,8 @@ class CoreTest(unittest.TestCase):
         # make sure the shuffled sequence does not lose any elements
         fac = factory.TaskFactory()
         task = fac.loadRoot(self.ROOT_PATH + "tests/data/sample1.task.json")
-        task.traverse()
+        #task.traverse()
+        task.execute()
 
     def main():
         unittest.main()
