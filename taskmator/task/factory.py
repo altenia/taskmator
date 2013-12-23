@@ -8,6 +8,18 @@ class TaskFactory:
     
     logger = logging.getLogger(__name__)
 
+    def __init__(self):
+        self.directory = collections.OrderedDict()
+
+    def registerTaskDef(self, taskName, taskRef):
+        taskRef
+        self.directory[taskName] = taskRef
+
+    def lookupTaskDef(self, taskName):
+        if (taskName in self.directory):
+            return self.directory[taskName]
+        else:
+            return None
 
     def createTask(self, parent, type, name):
         """
@@ -18,23 +30,47 @@ class TaskFactory:
         if (not TaskClass):
             raise Exception('Task  ' + type + " not found")
 
-        task = TaskClass(name)
+        task = TaskClass(name, parent)
 
-        if (parent):
-            task.setParent(parent)
-            parent.addChild(task)
+        self.registerTaskDef(task.getFqn(), task)
 
         return task
 
     def _handleAttribute(self, task, propKey, propVal):
         self.logger.debug ("Handling attribute ("+ propKey + ", " + str(propVal) + ")")
-        task.setAttribute(propKey, propVal)
+        # all property that starts with '@' is task attribute
+        # except for @tasks which is array of tasks, and @task which is a copy of another task 
 
+        if  (propKey == u'tasks'):
+            self._handleTaskDefArr(task, propVal)
+        else:
+            task.setAttribute(propKey, propVal)
+
+    def _handleTaskDefArr(self, task, propVal):
+        """
+        @param propVal array of task definition
+        """
+        #print(">> _handTaskDefArr")
+        for taskDef in propVal:
+            if (u'@decl' not in taskDef):
+                raise AttributeError("Attribute @task not found")
+
+            self._handleTaskDef(task, taskDef[u'@decl'], taskDef)
 
     def _handleTaskDef(self, task, propKey, propVal):
         """ 
+        task is the current task in context, which becomes the parent task
         propKey is of format <type> <task name>
+        propVal is json parsed task definition part
         """
+        if (propKey[0] == u'#'):
+            # Copy from another task
+            origTask = self.lookupTaskDef(propKey[1:])
+            #print ("****>>" + str(origTask))
+            newTask = origTask.copy("copy", task)
+            return newTask
+
+        #print ("~~Handling taskDef ("+ propKey + ", "+str(propVal)+")")
         self.logger.debug ("Handling taskDef ("+ propKey + ", {propVal})")
         typeAndTaskname = propKey.split(" ")
         if (len(typeAndTaskname) != 2):
@@ -50,7 +86,7 @@ class TaskFactory:
         newTask = self.createTask(task, fqnType, typeAndTaskname[1])
 
         taskModel = propVal
-        # Recursively load task
+        # If propVal is a string, it means it's a filename: recursively load config file
         if (type(propVal) is unicode):
             # if it is string, it can only be load:
             configFile = propVal
@@ -62,20 +98,21 @@ class TaskFactory:
             self.logger.debug("opening: " + configFile)
             taskModel = self.loadConfig(configFile)
 
-        # is a dictionary (i.e. representation of task)
+        # Now, the taskModel is a dictionary (i.e. representation of task)
         self.loadTask(newTask, taskModel)
 
         return newTask
 
     def loadTask(self, task, taskModel):
-        # handle all attributes first
+        #print("~~" + str(taskModel))
         if (u'@modelUri' in taskModel):
             task.modelUri = taskModel['@modelUri']
+        # handle all attributes first
         for propKey, propVal in taskModel.iteritems():
-            if (propKey[0] == u'@'): 
-                # all property that starts with '@' is task attribute
+            if (propKey[0] == u'@'):
                 self._handleAttribute(task, propKey[1:], propVal)
 
+        # handle all non-attributes next
         for propKey, propVal in taskModel.iteritems():
             if (propKey[0] != u'@'): 
                 # otherwise it is a task definition
@@ -110,7 +147,8 @@ class TaskFactory:
             if (aliases):
                 if (typeName in aliases):
                     return aliases[typeName]
-            currTask = currTask._parent
+            currTask = currTask.parent
+            #print ("%%-chk alias-a:" + str(currTask))
         # Fall back to the original typeName
         return typeName
 
