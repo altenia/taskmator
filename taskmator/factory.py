@@ -15,7 +15,6 @@ class TaskFactory:
         self.directory = collections.OrderedDict()
 
     def registerTaskDef(self, taskName, taskRef):
-        taskRef
         self.directory[taskName] = taskRef
 
     def lookupTaskDef(self, taskName):

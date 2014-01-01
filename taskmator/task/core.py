@@ -1,27 +1,37 @@
 import abc
 import copy
 import logging
-import json
-import subprocess
 import collections
+import threading
+import datetime
+from string import Template
 
-#debugger
-#import pudb; pu.db
+from taskmator.context import ExecutionContext
 
 
-'''
-abstract class for all Task
-'''
 class Task:
+    """
+    Abstract base class for all Tasks
+    """
     __metaclass__ = abc.ABCMeta
 
     __VALID_ATTRS = [u'aliases', u'description', u'dependsOn', u'version',
         u'modelUri', u'params', u'namespaces', u'load', u'haltOnError', u'precond', u'decl', u'type'
         ]
 
+    SCOPE_SEPARATOR = "/"
+
+    STATE_NEW = 0
+    STATE_RUNNING = 1
+    STATE_WAITING = 2
+    STATE_STOPPED = 3
+
     def __init__(self, name, parent = None):
         self.init(name, parent)
 
+        # A tuple where first element is the code, and second element is the result
+        self.outcome = (None, None)
+        self.retainOutcome = True
         self.modelUri = None
         self.aliases = None
         self.namespaces = None
@@ -30,9 +40,12 @@ class Task:
         self.haltOnError = False
 
     def __str__(self):
-        return  self.getFqn() + " ["+self.__class__.__name__+"]";
+        return self.getFqn() + " ["+self.__class__.__name__+"]";
 
     def init(self, name, parent = None):
+        self.state = Task.STATE_NEW
+        self.lastExecTimeStart = None
+        self.lastExecTimeStop = None
         self.name = name
         self.parent = parent
         if (parent):
@@ -41,27 +54,26 @@ class Task:
 
     def copy(self, name, parent):
         """
-        Retuns a copy of this tasks with a new name. 
+        Returns a copy of this tasks with a new name.
         All fields are deep copied except for parent and children
         """
-        nameTemp = self.name
-        parentTemp = self.parent
-        childrenTemp = self.children
+        temp_name = self.name
+        temp_parent = self.parent
+        temp_children = self.children
         self.name = None
         self.parent = None
         self.children = None
 
-        copyInstance = copy.deepcopy(self)
-        copyInstance.init(name, parent)
+        copy_instance = copy.deepcopy(self)
+        copy_instance.init(name, parent)
 
-        self.name = nameTemp
-        self.parent = parentTemp
-        self.children = childrenTemp
+        self.name = temp_name
+        self.parent = temp_parent
+        self.children = temp_children
 
-        
-        parent.addChild(copyInstance)
+        parent.addChild(copy_instance)
 
-        return copyInstance
+        return copy_instance
 
     def setAttribute(self, attrKey, attrVal):
         if (attrKey in self.__VALID_ATTRS):
@@ -70,7 +82,6 @@ class Task:
             raise Exception('Invalid Attribute "' + attrKey + '"')
 
     def getParams(self):
-        #
         retval = self.params.copy()
         node = self
         #print ("**"+ str(node) + " --" + str(node.parent))
@@ -82,15 +93,35 @@ class Task:
 
         return retval
 
-    def getParam(self, key, default=None):
+    def getParam(self, key, default=None, executionContext = None, expandTemplate = True):
         params = self.getParams()
+        retval = None;
         if (key in params):
-            return params[key]
+            retval = params[key]
         else:
-            default
+            retval = default
+
+        # Super simplified variable match
+        if (executionContext and retval[0] == u'$'):
+            dotPos = retval.rfind(".")
+            taskName = retval[1:dotPos]
+            propName = retval[dotPos+1:]
+            taskRef = executionContext.lookupTask(taskName)
+            if (propName == "outcome_code"):
+                retval = taskRef.getOutcome()[0]
+            elif (propName == "outcome_result"):
+                retval = taskRef.getOutcome()[1]
+
+        # Expand template by replacing the placeholders with the params
+        if (expandTemplate and retval):
+            retval = self.applyTemplate(retval)
+        return retval
 
     def setParams(self, params):
-        self.params.update(params)
+        if (not self.params):
+            self.params = params
+        else:
+            self.params.update(params)
 
     def hasParam(self, key):
         if (key in self.params):
@@ -130,14 +161,11 @@ class Task:
             for childName, child in node.getChildren():
                 self.__traverse(child)
 
-    def validateParam(self):
-        return True
+    def getOutcome(self):
+        return self.outcome
 
-    @abc.abstractmethod
-    def execute(self):
-        '''Concrete classes muse implement this method'''
-        return
-
+    def setOutcome(self, code, result):
+        self.outcome = (code, result)
 
     def getNamespace(self):
         """
@@ -167,6 +195,49 @@ class Task:
         # Fall back to the original typeName
         return ".".join(reversed(nampescope))
 
+    def applyTemplate(self, templateStr):
+        """
+        Applies template to the argument passed
+        """
+        tmpl = Template(templateStr)
+        return tmpl.safe_substitute(self.params)
+
+    @abc.abstractmethod
+    def executeInternal(self, executionContext):
+        '''Concrete classes muse implement this method'''
+        return
+
+    def execute(self, executionContext = None):
+        """
+        The main execution method
+        """
+        context_created = False
+        if (not executionContext):
+            context_created = True
+            executionContext = ExecutionContext()
+        self.lastExecTimeStart = datetime.datetime.now()
+        self.state = Task.STATE_RUNNING
+        # @todo - the task registry is using static module fqn instead of runtime call path.
+        executionContext.registerTask(self.getFqn(), self)
+
+        self.executeInternal(executionContext)
+        self.state = Task.STATE_STOPPED
+        self.lastExecTimeStop = datetime.datetime.now()
+
+        if (context_created):
+            executionContext.close()
+        return
+
+class TaskThread(threading.Thread):
+    def __init__(self, threadID, name, task, executionContext):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.task = task
+        self.executionContext = executionContext
+
+    def run(self):
+        self.task.execute(self.executionContext)
 
 class CompositeTask(Task):
 
@@ -178,6 +249,7 @@ class CompositeTask(Task):
     def __init__(self, name, parent):
         # Group of tasks, it could be run sequentially or parallel depending on @execMode
         self.group = []
+        self.execMode = 'sequential'
         super(CompositeTask, self).__init__(name, parent)
 
     def setAttribute(self, attrKey, attrVal):
@@ -187,79 +259,39 @@ class CompositeTask(Task):
             super(CompositeTask, self).setAttribute(attrKey, attrVal)
 
 
-    def execute(self):
+    def executeInternal(self, executionContext):
         self.logger.info ("Executing " + str(self))
-        for name, child in self.getChildren():
-            #print (str(child))
-            child.execute()
-        return 0
 
-'''
-Task that runs a Shell Command line
-The param must contain "command"
-The command are OS specific.
-'''
-class CommandLineTask(Task):
+        self.logger.info("Executing in " + self.execMode + " mode")
+        if (self.execMode == u'parallel'):
+            taskThreads = []
+            for name, child in self.getChildren():
+                #print (str(child))
+                taskThread = TaskThread(1, "Thread-" + child.name,  child )
+                taskThreads.append(taskThread)
+                try:
+                    taskThread.start()
+                except:
+                    print "Error: unable to start thread"
 
-    logger = logging.getLogger(__name__)
+            self.logger.info("Joining all threads")
+            for thread in taskThreads:
+                try:
+                    taskThread.join()
+                except:
+                    print "Error: unable to join thread"
 
-    def validateParam(self):
-        if ( not 'command' in self.params):
-            return False
-        return True
-
-    def execute(self):
-        self.logger.info ("Executing " + str(self))
-        cmdLine = None
-        if (self.getParam('ssh', False)):
-            #print("@"+ str(self.getParams()))
-            if ( not self.hasParam(u'remoteLogin') or not self.hasParam(u'sshKeyLocation') ):
-                self.logger.warning("Cannot ssh, missing remoteLogin or sshKeyLocation.");
-                return -1;
-            # Wrap the command with ssn connection
-            cmdLine = self._buildSshCommand(self.sshKeyLocation, self.remoteLogin, self.getParam(u'command'))
         else:
-            cmdLine = self.getParam(u'command')
+            # Executing in serial
+            lastChild = None
+            for name, child in self.getChildren():
+                lastChild = child
+                child.execute(executionContext)
+            # In serial mode, the last outcome is the compositeTask's outcome
+            code, result = lastChild.getOutcome()
+            self.setOutcome(code, result)
 
-        code=0; out=""
-        #if (self.getParam('skipExecution', False)):
-        if (True):
-            self.logger.info("Skipping: " + cmdLine)
-        else:
-            self.logger.info("Executing: " + cmdLine)
-            code, out = self._runCommand(cmdLine)
-
-        if (code != 0):
-            self.logger.info("Command [" + command[0] + "] failed with code:" + str(code))
-            self.logger.debug("output:" + out)
-            if (haltOnError):
-                self.logger.info( "Task [" + self.name + "] Halted.")
-                return code
-        
-        self.logger.info("Task [" + self.name + "] Completed.")
         return 0
-
-    def _buildSshCommand(self, keyLocation, host, remoteCommand):
-        """
-        Returns a string of an ssh command
-        @param keyLocation   - the location of the key for ssh
-        @param host          - the remote host to ssh
-        @param remoteCommand - the command to execute in the remote host
-        """
-        cmd = "sudo ssh -i  " + keyLocation + " " + host + " " + "\"" +remoteCommand + "\""
-        return cmd
-
-    def _runCommand(self, shellCommand):
-        """
-        Runs a (shell) command. 
-        @param shellCommand - the shell command to run
-        """
-        try:
-            retval = subprocess.check_output( shellCommand, shell=True, stderr=subprocess.STDOUT)
-            return (0, retval)
-        except subprocess.CalledProcessError as cpe:
-            return (cpe.returncode, cpe.output);
-
 
 
 '''
@@ -271,31 +303,32 @@ class CronTask(Task):
 
     logger = logging.getLogger(__name__)
 
-    def execute(self):
+    def executeInternal(self, executionContext):
         self.logger.info ("Executing " + str(self))
         return 0
 
 
-'''
-Task that Does switch case
-'''
 class SwitchTask(Task):
+    """
+    Task that Does switch case
+    """
 
     logger = logging.getLogger(__name__)
 
-    def execute(self):
+    def executeInternal(self, executionContext):
         self.logger.info ("Executing " + str(self))
         return 0
 
-'''
-Task that does Iteration
-'''
+
 class IterationTask(Task):
+    """
+    Task that does Iteration
+    """
 
     logger = logging.getLogger(__name__)
 
     # Double underscore makes unique namespace for this class
-    __VALID_ATTRS = [u'for', u'execute']
+    __VALID_ATTRS = [u'for', u'exec']
 
     def setAttribute(self, attrKey, attrVal):
         if (attrKey in self.__VALID_ATTRS):
@@ -303,7 +336,7 @@ class IterationTask(Task):
         else:
             super(IterationTask, self).setAttribute(attrKey, attrVal)
 
-    def execute(self):
+    def executeInternal(self, executionContext):
         self.logger.info ("Executing " + str(self))
         return 0
 

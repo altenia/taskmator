@@ -1,0 +1,109 @@
+{
+	"@namespaces": {
+		"core": "core",
+		"util": "contrib/utils"
+	},
+
+	"@aliases": {
+		"ct": "core.Composite",
+		"cl": "core.CommandLine",
+		"cron": "core.Cron",
+		"rpt": "core.Repeat",
+		"iter": "core.Iteration"
+	},
+	"@version": "1.0",
+
+	"@params": {
+		"PROJECT_NAME": "$PROJECT_NAME"
+	},
+
+
+	"@default":"monitorprocess",
+
+	"@tasks": [
+		{
+			"@decl": "cl remote_pull_repo",
+			"@params": {
+				"command":"cd ~/applications/{PROJECT_NAME}; git pull {checkoutBranchCmd}",
+				"ssh":true
+				},
+			"@haltOnError": true 
+		},
+		{
+			"@decl": "ct prepare",
+			"@description": "",
+			"@params": {
+				"PROJECT_NAME": "brixserver",
+				"KEY_LOCATION": "/home/ubuntu/.ssh/azurekey.pem",
+				"JENKINS_HOME":"/home/ubuntu/workspaces/jenkins/"
+			},
+
+			"@execMode": "sequential",
+			
+			"@haltOnError": true,
+
+			"@tasks": [
+				{"@decl": "cl create_user", "@params": {"command":"sudo adduser --system --no-create-home --group {SERVICE_USER}", "ssh":true},"@haltOnError": true },
+		        {"@decl": "cl create_folders", "@params": {"command":"cd ~; mkdir applications; cd applications; mkdir log; mkdir backup", "ssh":true},"@haltOnError": true },
+		        {"@decl": "cl clone_repo", "@params": {"command":"cd ~/applications; git clone {branchArg} {PROJECT_REPO_URL}", "ssh":true},"@haltOnError": true },
+		        {"@decl": "cl change_group", "@params": {"command":"sudo chgrp -R {SERVICE_USER} ~/applications", "ssh":true},"@haltOnError": true },
+		        {"@decl": "cl register_service", "@params": {"command":"sudo cp ~/applications/{PROJECT_NAME}/bin/{APP_NAME}.conf.{APP_ENV} /etc/init/{APP_NAME}.conf", "ssh":true},"@haltOnError": true },
+		        {"@decl": "cl start_service", "@params": {"command":"sudo start {APP_NAME}", "ssh":true},"@haltOnError": true }
+			]
+		},
+
+		{
+			"@decl": "ct deploy",
+			"@description": "Pulls a repository",
+			"@params": {
+				"APP_NAME":"$APP_NAME",
+				"PROJECT_NAME":"$PROJECT_NAME",
+				"SERVICE_USER":"brixserver",
+				"CLOSURE_COMP": "$CLOSURE_COMP",
+				"remoteLogin": "ubuntu@10.11.26.127",
+				"sshKeyLocation": "/home/ubuntu/.ssh/azurekey.pem"
+			},
+
+			"@haltOnError": true,
+
+			"@execMode": "sequential",
+			"@tasks": [
+		        {"@decl": "cl remote_service_stop", "@params": {"command":"sudo stop {APP_NAME}", "ssh":true}, "@haltOnError": true },
+		        {"@decl": "#root.remote_pull_repo"},
+		        {"@decl": "cl remote_change_group", "@params": {"command":"sudo chgrp -R {SERVICE_USER} ~/applications/{PROJECT_NAME}", "ssh":true},"@haltOnError": true },
+		        {"@decl": "cl remote_restart_service", "@params": {"command":"sudo stop {APP_NAME}; sudo start {APP_NAME}", "ssh":true}, "@precond": "{APP_NAME}", "@haltOnError": true },
+		        {"@decl": "cl remote_closure_comp", "@params": {"command":"cd ~/applications/{PROJECT_NAME}/js/; ./build.sh", "ssh":true}, "@precond": "{CLOSURE_COMP}", "@haltOnError": true }
+			]
+		},
+
+		{
+			"@decl": "iter group_deploy",
+			"@description": "For all logins, does a pull_repo",
+			"@params": {
+				"LOGINS": ["ubuntu@10.11.30.62,ubuntu@10.11.24.141"]
+			},
+
+			"@for": "$remoteLogin in {LOGINS}",
+
+			"@execute": "#deploy"
+		},
+
+		{
+			"@decl": "cl test",
+			"@load": "compile.task.json"
+		},
+
+		{
+			"@decl": "cron monitorprocess",
+			"@description": "Sample cron task",
+			"@params": {
+				"expression": "0 * * * * ",
+				"task": "check_proc"
+			},
+
+			"@haltOnError": true,
+
+			"@dependsOn": "prepare"
+		}
+	]
+}
