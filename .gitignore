@@ -34,3 +34,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# JetBrain's PyCharm
+.idea
+
+#OS
+.DS_Store

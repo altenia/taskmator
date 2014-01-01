@@ -31,17 +31,6 @@ class CoreTest(unittest.TestCase):
 
         self.assertEqual(l2a.getFqn(), "root.l1.l2a")
 
-    @unittest.skip("testing testCommandLineTask")
-    def testCommandLineTask(self):
-        # make sure the shuffled sequence does not lose any elements
-        task = core.CommandLineTask("CommandLIne", "ls", "List", {"command": "ls -la"})
-
-        #task.execute();
-        task.execute();
-        
-        #self.failUnless(IsOdd(1))
-        self.assertEqual(0, task.execute());
-
     def testTaskFactory(self):
         # make sure the shuffled sequence does not lose any elements
         fac = factory.TaskFactory()

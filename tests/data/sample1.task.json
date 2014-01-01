@@ -6,10 +6,11 @@
 
 	"@aliases": {
 		"ct": "core.Composite",
-		"cl": "core.CommandLine",
+		"cl": "util.CommandLine",
 		"cron": "core.Cron",
 		"rpt": "core.Repeat",
 		"iter": "core.Iteration"
+		"jpar": "core.JsonParser"
 	},
 	"@version": "1.0",
 
@@ -33,7 +34,7 @@
 			"JENKINS_HOME":"/home/ubuntu/workspaces/jenkins/"
 		},
 
-		"@execMode": "sequential",
+		"@execMode": "parallel",
 		
 		"@haltOnError": true,
 
@@ -79,7 +80,7 @@
 
 		"@for": "$remoteLogin in {LOGINS}",
 
-		"@execute": "#deploy"
+		"@exec": "#deploy"
 	},
 
 	"cl test": "compile.task.json",
@@ -95,6 +96,21 @@
 
 		"@dependsOn": "prepare"
 	},
+
+	"ct proc_etime": {
+	    "@description": "Sample cron task",
+		"@params": {
+			"PROC_NAME": "index.js",
+		},
+
+		"@haltOnError": true,
+
+		"@execMode": "sequential",
+		"@tasks": [
+	        {"@decl": "cl get_pid", "@params": {"command":"pgrep {PROC_NAME}"}, "@haltOnError": true },
+	        {"@decl": "cl get_etime", "@params": {"PID": "$get_pid.outcome.result", "command":"ps -p {PID}-o etime="}, "@haltOnError": true },
+		]
+	}
 
 	"@default":"monitorprocess" 
 }
