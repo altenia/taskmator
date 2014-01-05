@@ -1,7 +1,7 @@
 import sys
 import argparse
 import logging
-from taskmator.task import factory
+from taskmator import factory
 
 
 class MainApp:

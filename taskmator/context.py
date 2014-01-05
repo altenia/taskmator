@@ -35,7 +35,7 @@ class ExecutionContext:
         @param state -- the task state
         """
         result = []
-        for task in self.registry:
+        for taskname, task in self.registry.iteritems():
             match = True
             if(state):
                 if (task.getState() == state):
@@ -48,4 +48,4 @@ class ExecutionContext:
 
             if (match):
                 result.append(task)
-
+        return result

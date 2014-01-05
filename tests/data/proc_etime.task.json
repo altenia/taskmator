@@ -1,8 +1,8 @@
 {
-    "@decl": "ct proc_etime":
+    "@decl": "ct proc_etime",
     "@description": "Sample cron task",
     "@params": {
-        "PROC_NAME": "index.js",
+        "PROC_NAME": "index.js"
     },
 
     "@haltOnError": true,
@@ -10,6 +10,6 @@
     "@execMode": "sequential",
     "@tasks": [
         {"@decl": "cl get_pid", "@params": {"command":"pgrep {PROC_NAME}"}, "@haltOnError": true },
-        {"@decl": "cl get_etime", "@params": {"PID": "$get_pid.outcome_result", "command":"ps -p {PID} -o etime="}, "@haltOnError": true },
+        {"@decl": "cl get_etime", "@params": {"PID": "$get_pid.outcome_result", "command":"ps -p {PID} -o etime="}, "@haltOnError": true }
     ]
 }

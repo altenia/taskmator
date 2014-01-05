@@ -4,6 +4,9 @@ import json
 import collections
 
 class TaskFactory:
+    """
+    Factory class that creates tasks from JSON
+    """
     ROOT_NS = "taskmator.task"
 
     ATTR_PREFIX = u'@'
@@ -39,6 +42,9 @@ class TaskFactory:
         return task
 
     def _handleAttribute(self, task, propKey, propVal):
+        """
+        Handles attributes (field keys that starts with @)
+        """
         self.logger.debug ("Handling attribute ("+ propKey + ", " + str(propVal) + ")")
         # all property that starts with '@' is task attribute
         # except for @tasks which is array of tasks, and @task which is a copy of another task 

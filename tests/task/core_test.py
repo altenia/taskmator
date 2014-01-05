@@ -1,8 +1,7 @@
 import unittest
 import logging
-from taskmator.task import core, factory, util;
-from taskmator import factory;
-#import pudb; pu.db
+from taskmator.task import core, util
+from taskmator import factory
 
 class CoreTest(unittest.TestCase):
 
@@ -17,6 +16,7 @@ class CoreTest(unittest.TestCase):
 
         logger.setLevel(logging.INFO)
 
+    @unittest.skip("Skipping OutputPassing")
     def testNamespace(self):
         fac = factory.TaskFactory()
         taskTypeName = "taskmator.task.core.CompositeTask"
@@ -31,21 +31,40 @@ class CoreTest(unittest.TestCase):
 
         self.assertEqual(l2a.getFqn(), "root.l1.l2a")
 
-    def testCommandLineTask(self):
+    @unittest.skip("Skipping OutputPassing")
+    def testOutputPassing(self):
         rootTask = core.CompositeTask("root", None)
-        pgreptask = util.CommandLineTask("echo_hello", rootTask)
+        task1 = util.CommandLineTask("echo_hello", rootTask)
         params = {"message":"Hello", "command": "echo \"${message}\""}
-        pgreptask.setParams(params)
+        task1.setParams(params)
 
-        pgreptask = util.CommandLineTask("echo_append", rootTask)
-        params = {"prevmessage":"$root.echo_hello.outcome_result", "command": "echo \"${prevmessage} Task\""}
-        pgreptask.setParams(params)
+        task2 = util.CommandLineTask("echo_append", rootTask)
+        params = {"command": "echo \"${root.echo_hello.outcome_result} Task\""}
+        task2.setParams(params)
 
         rootTask.execute()
         code, result = rootTask.getOutcome()
         self.assertEqual(code, 0, "Outcome Code is not 0")
-        self.assertEqual(result, "Hello World\n", "Outcome result does not match")
-        print("Result: \""+result + "\"")
+        self.assertEqual(result, "Hello Task", "Outcome result does not match")
+
+    #@unittest.skip("Skipping OutputPassing")
+    def testPrecond(self):
+        task1 = core.EchoTask("echo_hello", None)
+        params = {"message": "This is test"}
+        task1.setParams(params)
+        code = task1.execute()
+        self.assertEqual(code, core.Task.CODE_OK, "Outcome Code is not 0")
+
+        task1.precond = "'${message}' == 'This is test'"
+        task1.execute()
+        code = task1.execute()
+        self.assertEqual(code, core.Task.CODE_OK, "Outcome Code is not " + str(core.Task.CODE_OK))
+
+        task1.precond = "'${message}' == 'This is another test'"
+        task1.execute()
+        code = task1.execute()
+        self.assertEqual(code, core.Task.CODE_SKIPPED, "Outcome Code is not " + str(core.Task.CODE_SKIPPED))
+
 
     def main():
         unittest.main()

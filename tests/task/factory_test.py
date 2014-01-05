@@ -1,6 +1,5 @@
 import unittest
 import logging
-from taskmator.task import core, factory;
 from taskmator import factory;
 #import pudb; pu.db
 

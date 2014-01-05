@@ -4,9 +4,42 @@ import logging
 import collections
 import threading
 import datetime
-from string import Template
+import re
+import string
 
 from taskmator.context import ExecutionContext
+
+
+class ParamTemplate(string.Template):
+    """
+    Templating for the param: accepts dots
+    for replacing ExecutionContext values
+    """
+    idpattern = r"[\._a-z][\._a-z0-9]*"
+
+
+class TemplateModelAdapter:
+    def __init__(self, fallback_dic, execution_context=None):
+        self.fallback_dic = fallback_dic
+        self.execution_context = execution_context
+
+    def __getitem__(self, key):
+        retval = None
+        # If the key referes to an outcome from the ExecutionContext
+        if (".outcome_" in key):
+            if (self.execution_context):
+                dotPos = key.rfind(".")
+                taskName = key[0:dotPos]
+                propName = key[dotPos + 1:]
+                taskRef = self.execution_context.lookupTask(taskName)
+                if (taskRef):
+                    if (propName == "outcome_code"):
+                        retval = taskRef.getOutcome()[0]
+                    elif (propName == "outcome_result"):
+                        retval = taskRef.getOutcome()[1]
+        if (retval == None):
+            retval = self.fallback_dic[key]
+        return retval
 
 
 class Task:
@@ -16,8 +49,8 @@ class Task:
     __metaclass__ = abc.ABCMeta
 
     __VALID_ATTRS = [u'aliases', u'description', u'dependsOn', u'version',
-        u'modelUri', u'params', u'namespaces', u'load', u'haltOnError', u'precond', u'decl', u'type'
-        ]
+                     u'modelUri', u'params', u'namespaces', u'load', u'haltOnError', u'precond', u'decl', u'type'
+    ]
 
     SCOPE_SEPARATOR = "/"
 
@@ -26,11 +59,15 @@ class Task:
     STATE_WAITING = 2
     STATE_STOPPED = 3
 
-    def __init__(self, name, parent = None):
+    CODE_OK = 0
+    CODE_SKIPPED = -1
+
+    def __init__(self, name, parent=None):
         self.init(name, parent)
 
         # A tuple where first element is the code, and second element is the result
-        self.outcome = (None, None)
+        self.outcome_code = None
+        self.outcome_result = None
         self.retainOutcome = True
         self.modelUri = None
         self.aliases = None
@@ -38,11 +75,16 @@ class Task:
         self.description = None
         self.params = None
         self.haltOnError = False
+        self.precond = None
 
     def __str__(self):
-        return self.getFqn() + " ["+self.__class__.__name__+"]";
+        return self.getFqn() + " [" + self.__class__.__name__ + "]";
 
-    def init(self, name, parent = None):
+    def init(self, name, parent=None):
+        """
+        Initialization that is run after deep copying a task instance
+        I.e. All other variables are copied over.
+        """
         self.state = Task.STATE_NEW
         self.lastExecTimeStart = None
         self.lastExecTimeStop = None
@@ -82,39 +124,45 @@ class Task:
             raise Exception('Invalid Attribute "' + attrKey + '"')
 
     def getParams(self):
+        """
+        Returns a copy of the param
+        Goes up to the scope hierarchy to add entries which the key does not conflict
+        """
+        if (not self.params):
+            return {}
         retval = self.params.copy()
-        node = self
-        #print ("**"+ str(node) + " --" + str(node.parent))
-        while (node.parent):
+        node = self.parent
+        while (node and node.params):
             for key, val in node.params.items():
                 if (key not in retval):
-                    retval['key'] = val
+                    retval[key] = val
             node = node.parent
 
         return retval
 
-    def getParam(self, key, default=None, executionContext = None, expandTemplate = True):
+    def applyTemplate(self, templateStr, params, executionContext=None):
+        """
+        Applies template to the argument passed
+        """
+        # Expand template by replacing the placeholders with the params
+        tpl = ParamTemplate(templateStr)
+        model = TemplateModelAdapter(params, executionContext)
+        retval = tpl.safe_substitute(model)
+        return retval
+
+
+    def getParam(self, key, default=None, executionContext=None, expandTemplate=True):
         params = self.getParams()
-        retval = None;
+        retval = None
         if (key in params):
             retval = params[key]
         else:
             retval = default
 
-        # Super simplified variable match
-        if (executionContext and retval[0] == u'$'):
-            dotPos = retval.rfind(".")
-            taskName = retval[1:dotPos]
-            propName = retval[dotPos+1:]
-            taskRef = executionContext.lookupTask(taskName)
-            if (propName == "outcome_code"):
-                retval = taskRef.getOutcome()[0]
-            elif (propName == "outcome_result"):
-                retval = taskRef.getOutcome()[1]
-
         # Expand template by replacing the placeholders with the params
-        if (expandTemplate and retval):
-            retval = self.applyTemplate(retval)
+        if expandTemplate and isinstance(retval, basestring):
+            retval = self.applyTemplate(retval, params, executionContext)
+
         return retval
 
     def setParams(self, params):
@@ -126,6 +174,14 @@ class Task:
     def hasParam(self, key):
         if (key in self.params):
             return True
+
+        node = self.parent
+        while (node and node.params):
+            if (key in node.params):
+                return True
+            node = node.parent
+
+        return False
 
     def setParent(self, parent):
         self.parent = parent
@@ -162,10 +218,18 @@ class Task:
                 self.__traverse(child)
 
     def getOutcome(self):
-        return self.outcome
+        return (self.outcome_code, self.outcome_result)
 
     def setOutcome(self, code, result):
-        self.outcome = (code, result)
+        self.outcome_code = code
+        if (self.retainResult):
+            self.outcome_result = result
+
+    def getResult(self):
+        return self.outcome_result
+
+    def setResult(self, result):
+        self.outcome_result = result
 
     def getNamespace(self):
         """
@@ -195,40 +259,68 @@ class Task:
         # Fall back to the original typeName
         return ".".join(reversed(nampescope))
 
-    def applyTemplate(self, templateStr):
-        """
-        Applies template to the argument passed
-        """
-        tmpl = Template(templateStr)
-        return tmpl.safe_substitute(self.params)
+    def getTypename(self):
+        return self.__class__.__name__
+
 
     @abc.abstractmethod
     def executeInternal(self, executionContext):
-        '''Concrete classes muse implement this method'''
+        """
+        Concrete classes must implement this method
+        """
         return
 
-    def execute(self, executionContext = None):
+    def validate(self):
         """
-        The main execution method
+        Concrete classes must implement this method
+        It should return true if valid, false otherwise
         """
+        return True
+
+    def execute(self, executionContext=None):
+        """
+        The main execution method.
+        It internally calls executeInternal following the Tempalte Method pattern
+        """
+
+        # Flag that indicates whether or not the execution context was created here
+        # I.e. this is the root task
         context_created = False
         if (not executionContext):
             context_created = True
             executionContext = ExecutionContext()
+
+        precondEval = True
+        if (self.precond):
+            params = self.getParams()
+            precond = self.applyTemplate(self.precond, params, executionContext)
+            precondEval = eval(precond, {"__builtins__": {}})
+        if (not precondEval):
+            # Precondition evaluated to false, return
+            return Task.CODE_SKIPPED
+
         self.lastExecTimeStart = datetime.datetime.now()
         self.state = Task.STATE_RUNNING
+
         # @todo - the task registry is using static module fqn instead of runtime call path.
+        #         shall we keep as is?
         executionContext.registerTask(self.getFqn(), self)
 
-        self.executeInternal(executionContext)
+        self.outcome_code = self.executeInternal(executionContext)
         self.state = Task.STATE_STOPPED
         self.lastExecTimeStop = datetime.datetime.now()
 
         if (context_created):
             executionContext.close()
-        return
+        return self.outcome_code
+
 
 class TaskThread(threading.Thread):
+    """
+    Class that encapsulates a task in thread
+    This thread is executed from CompositeTask
+    """
+
     def __init__(self, threadID, name, task, executionContext):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -239,8 +331,11 @@ class TaskThread(threading.Thread):
     def run(self):
         self.task.execute(self.executionContext)
 
-class CompositeTask(Task):
 
+class CompositeTask(Task):
+    """
+    Task that is a grouping of tasks
+    """
     logger = logging.getLogger(__name__)
 
     # Double underscore makes unique namespace for this class
@@ -260,14 +355,16 @@ class CompositeTask(Task):
 
 
     def executeInternal(self, executionContext):
-        self.logger.info ("Executing " + str(self))
+        self.logger.info("Executing " + str(self))
 
         self.logger.info("Executing in " + self.execMode + " mode")
+
+        code = Task.CODE_OK
         if (self.execMode == u'parallel'):
             taskThreads = []
             for name, child in self.getChildren():
                 #print (str(child))
-                taskThread = TaskThread(1, "Thread-" + child.name,  child )
+                taskThread = TaskThread(1, "Thread-" + child.name, child, executionContext)
                 taskThreads.append(taskThread)
                 try:
                     taskThread.start()
@@ -280,6 +377,7 @@ class CompositeTask(Task):
                     taskThread.join()
                 except:
                     print "Error: unable to join thread"
+            # @todo Assign the result value
 
         else:
             # Executing in serial
@@ -289,23 +387,21 @@ class CompositeTask(Task):
                 child.execute(executionContext)
             # In serial mode, the last outcome is the compositeTask's outcome
             code, result = lastChild.getOutcome()
-            self.setOutcome(code, result)
+            self.setResult(result)
 
-        return 0
+        return code
 
-
-'''
-Task that runs a Shell Command line
-The param must contain "command"
-The command are OS specific.
-'''
-class CronTask(Task):
-
+class EchoTask(Task):
+    """
+    Task that simply echoes the message
+    """
     logger = logging.getLogger(__name__)
 
     def executeInternal(self, executionContext):
-        self.logger.info ("Executing " + str(self))
-        return 0
+        message = self.getParam('message', False)
+        self.logger.info("Echo '" + message+ "'")
+        self.setResult(message)
+        return Task.CODE_OK
 
 
 class SwitchTask(Task):
@@ -316,8 +412,8 @@ class SwitchTask(Task):
     logger = logging.getLogger(__name__)
 
     def executeInternal(self, executionContext):
-        self.logger.info ("Executing " + str(self))
-        return 0
+        self.logger.info("Executing " + str(self))
+        return Task.CODE_OK
 
 
 class IterationTask(Task):
@@ -337,6 +433,6 @@ class IterationTask(Task):
             super(IterationTask, self).setAttribute(attrKey, attrVal)
 
     def executeInternal(self, executionContext):
-        self.logger.info ("Executing " + str(self))
-        return 0
+        self.logger.info("Executing " + str(self))
+        return Task.CODE_OK
 
