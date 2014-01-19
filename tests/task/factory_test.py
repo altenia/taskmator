@@ -5,8 +5,9 @@ from taskmator import factory;
 
 class CoreTest(unittest.TestCase):
 
-    def setUp(self):
-        self.ROOT_PATH = "/Users/ysahn/workspace/tool/taskmator/"
+    ROOT_PATH = "/Users/ysahn/workspace/tool/taskmator/"
+    @classmethod
+    def setUpClass(cls):
 
         logger = logging.getLogger("taskmator")
         formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')

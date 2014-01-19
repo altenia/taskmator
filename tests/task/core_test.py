@@ -5,8 +5,8 @@ from taskmator import factory
 
 class CoreTest(unittest.TestCase):
 
-    def setUp(self):
-        self.ROOT_PATH = "/Users/ysahn/workspace/tool/taskmator/"
+    @classmethod
+    def setUpClass(cls):
 
         logger = logging.getLogger("taskmator")
         formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
@@ -16,7 +16,7 @@ class CoreTest(unittest.TestCase):
 
         logger.setLevel(logging.INFO)
 
-    @unittest.skip("Skipping OutputPassing")
+    @unittest.skip("Skipping Namespace")
     def testNamespace(self):
         fac = factory.TaskFactory()
         taskTypeName = "taskmator.task.core.CompositeTask"
@@ -31,8 +31,12 @@ class CoreTest(unittest.TestCase):
 
         self.assertEqual(l2a.getFqn(), "root.l1.l2a")
 
-    @unittest.skip("Skipping OutputPassing")
+    #@unittest.skip("Skipping OutputPassing")
     def testOutputPassing(self):
+        """
+        Tests that in a composite task first task's output is used as input
+        for the second task
+        """
         rootTask = core.CompositeTask("root", None)
         task1 = util.CommandLineTask("echo_hello", rootTask)
         params = {"message":"Hello", "command": "echo \"${message}\""}
@@ -49,11 +53,16 @@ class CoreTest(unittest.TestCase):
 
     #@unittest.skip("Skipping OutputPassing")
     def testPrecond(self):
+        """
+        Tests that tasks are correctly executed or skipped based
+        on the evaluation of the preconditions
+
+        """
         task1 = core.EchoTask("echo_hello", None)
         params = {"message": "This is test"}
         task1.setParams(params)
         code = task1.execute()
-        self.assertEqual(code, core.Task.CODE_OK, "Outcome Code is not 0")
+        self.assertEqual(code, core.Task.CODE_OK, "Outcome Code is not " + str(core.Task.CODE_OK))
 
         task1.precond = "'${message}' == 'This is test'"
         task1.execute()

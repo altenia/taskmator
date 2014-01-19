@@ -6,7 +6,6 @@ import sys
 import string
 
 
-
 class CommandLineTask(Task):
     """
     Task that runs a Shell Command line
@@ -32,7 +31,7 @@ class CommandLineTask(Task):
             # Wrap the command with ssn connection
             sshKeyLocation = self.getParam('sshKeyLocation')
             remoteLogin = self.getParam('remoteLogin')
-            command = self.getParam(u'command')
+            command = self.getParam(u'command', None, executionContext)
             cmdLine = self._buildSshCommand(sshKeyLocation, remoteLogin, command)
         else:
             cmdLine = self.getParam(u'command', None, executionContext)

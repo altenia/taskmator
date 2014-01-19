@@ -4,8 +4,8 @@ from taskmator.task import core, util
 
 class CoreTest(unittest.TestCase):
 
-    def setUp(self):
-        self.ROOT_PATH = "/Users/ysahn/workspace/tool/taskmator/"
+    @classmethod
+    def setUpClass(cls):
 
         logger = logging.getLogger("taskmator")
         formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
@@ -16,6 +16,9 @@ class CoreTest(unittest.TestCase):
         logger.setLevel(logging.INFO)
 
     def testCommandLineTask(self):
+        """
+        Tests that echo command is executed and results no error code
+        """
         task = util.CommandLineTask("cmd", None)
         params = {"message":"Hello World", "command": "echo \"${message}\""}
         task.setParams(params)
@@ -29,6 +32,11 @@ class CoreTest(unittest.TestCase):
 
     #@unittest.skip("Skipping testOutputReportTask")
     def testOutputReportTask(self):
+        """
+        Tests that a composite task containing two command line tasks and an
+        output report tasks displays the output report accordingly.
+        """
+
         rootTask = core.CompositeTask("root", None)
         task1 = util.CommandLineTask("t1", rootTask)
         params = {"message":"T1", "command": "echo \"${message} output\""}

@@ -71,6 +71,7 @@ class TaskFactory:
         propKey is of format <type> <task name>
         propVal is json parsed task definition part
         """
+        # @todo - move task duplication to runtime (instead of load time)
         if (propKey[0] == u'#'):
             refAndTaskname = propKey[1:].split(" ")
             refAndTaskname[0]

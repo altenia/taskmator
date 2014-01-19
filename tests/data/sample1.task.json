@@ -6,7 +6,7 @@
 
 	"@aliases": {
 		"ct": "core.Composite",
-		"rpt": "core.Repeat",
+		"switch": "core.Switch",
 		"iter": "core.Iteration",
 		"jpar": "core.JsonParser",
 		"cl": "util.CommandLine",
@@ -84,6 +84,20 @@
 		"@for": "$remoteLogin in ${LOGINS}",
 
 		"@exec": "#deploy"
+	},
+
+	"switch condition": {
+		"@description": "switch",
+		"@params": {
+		    "IGNORE": false
+		},
+
+		"@cases": {
+		    "${IGNORE} == True": "#root.task1",
+		    "${root.echo_hello.outcome_result} == 'OK'": "#root.task1",
+		    "${root.echo_hello.outcome_result} == 'ERROR'": "#handler_error"
+		}
+
 	},
 
 	"ct test": "proc_etime.task.json",

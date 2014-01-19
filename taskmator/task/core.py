@@ -73,6 +73,9 @@ class Task:
         self.aliases = None
         self.namespaces = None
         self.description = None
+        # attributes are local data that cannot be overriden
+        self.attribs = {}
+        # params are used in input for template. It can also be overriden
         self.params = None
         self.haltOnError = False
         self.precond = None
@@ -119,9 +122,22 @@ class Task:
 
     def setAttribute(self, attrKey, attrVal):
         if (attrKey in self.__VALID_ATTRS):
-            setattr(self, attrKey, attrVal)
+            #setattr(self, attrKey, attrVal)
+            self.attribs[attrKey] = attrVal;
         else:
             raise Exception('Invalid Attribute "' + attrKey + '"')
+
+    def getAttribute(self, attrKey, default=None, executionContext=None, expandTemplate=True):
+        if (attrKey in self.attribs):
+            retval = self.attribs[attrKey]
+
+            # Expand template by replacing the placeholders with the params
+            if expandTemplate and isinstance(retval, basestring):
+                retval = self.applyTemplate(retval, self.getParams(), executionContext)
+            return retval
+
+        else:
+            return default
 
     def getParams(self):
         """
@@ -176,7 +192,7 @@ class Task:
             return True
 
         node = self.parent
-        while (node and node.params):
+        while (node):
             if (key in node.params):
                 return True
             node = node.parent
@@ -277,6 +293,9 @@ class Task:
         """
         return True
 
+    def eval(self):
+        return eval(precond, {"__builtins__": {}})
+
     def execute(self, executionContext=None):
         """
         The main execution method.
@@ -294,7 +313,7 @@ class Task:
         if (self.precond):
             params = self.getParams()
             precond = self.applyTemplate(self.precond, params, executionContext)
-            precondEval = eval(precond, {"__builtins__": {}})
+            precondEval = self.eval(precond)
         if (not precondEval):
             # Precondition evaluated to false, return
             return Task.CODE_SKIPPED
@@ -303,7 +322,7 @@ class Task:
         self.state = Task.STATE_RUNNING
 
         # @todo - the task registry is using static module fqn instead of runtime call path.
-        #         shall we keep as is?
+        #         shall we keep as is? What is is already registered?
         executionContext.registerTask(self.getFqn(), self)
 
         self.outcome_code = self.executeInternal(executionContext)
@@ -342,14 +361,11 @@ class CompositeTask(Task):
     __VALID_ATTRS = [u'default', u'tasks', u'execMode']
 
     def __init__(self, name, parent):
-        # Group of tasks, it could be run sequentially or parallel depending on @execMode
-        self.group = []
-        self.execMode = 'sequential'
         super(CompositeTask, self).__init__(name, parent)
 
     def setAttribute(self, attrKey, attrVal):
         if (attrKey in self.__VALID_ATTRS):
-            setattr(self, attrKey, attrVal)
+            self.attribs[attrKey] = attrVal
         else:
             super(CompositeTask, self).setAttribute(attrKey, attrVal)
 
@@ -357,10 +373,11 @@ class CompositeTask(Task):
     def executeInternal(self, executionContext):
         self.logger.info("Executing " + str(self))
 
-        self.logger.info("Executing in " + self.execMode + " mode")
+        execMode = self.getAttribute(u'execMode', u'sequential')
+        self.logger.info("Executing in " + execMode + " mode")
 
         code = Task.CODE_OK
-        if (self.execMode == u'parallel'):
+        if (execMode == u'parallel'):
             taskThreads = []
             for name, child in self.getChildren():
                 #print (str(child))
@@ -406,13 +423,24 @@ class EchoTask(Task):
 
 class SwitchTask(Task):
     """
-    Task that Does switch case
+    Task that Does switch case.
+    Notice: first matching case is the one that is executed.
     """
 
     logger = logging.getLogger(__name__)
 
     def executeInternal(self, executionContext):
         self.logger.info("Executing " + str(self))
+        cases = self.getAttribute(u'cases')
+
+        # case is the boolean statement, body is the task to execute.
+        for case, body in cases:
+            if self.eval(case):
+                if (body[0] == u'#'):
+                    task_fqname = body[1:]
+                    task = executionContext.lookupTask(task_fqname)
+                    task.execute()
+                break
         return Task.CODE_OK
 
 
