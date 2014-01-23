@@ -373,6 +373,12 @@ class CompositeTask(Task):
     def executeInternal(self, executionContext):
         self.logger.info("Executing " + str(self))
 
+        # Find which task(s) to execute.
+        taskToExec = self.getAttribute(u'exec', u'default')
+        if (isinstance(taskToExec, basestring)):
+            self.getChild(taskToExec)
+
+
         execMode = self.getAttribute(u'execMode', u'sequential')
         self.logger.info("Executing in " + execMode + " mode")
 

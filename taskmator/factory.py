@@ -3,6 +3,22 @@ import taskmator.task.core
 import json
 import collections
 
+class TaskLoader:
+    def createTask(self, parent, type, name):
+        """
+        Dynamically creates a specifc task object and returns that object.
+        Returns None it the type does not match to any existing class
+        """
+        TaskClass = self._getClass(type)
+        if (not TaskClass):
+            raise Exception('Task  ' + type + " not found")
+
+        task = TaskClass(name, parent)
+
+        self.registerTaskDef(task.getFqn(), task)
+
+        return task
+
 class TaskFactory:
     """
     Factory class that creates tasks from JSON
