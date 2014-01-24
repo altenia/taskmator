@@ -28,7 +28,7 @@ class TaskContainer:
     The task template is called task specification.
     """
 
-    ROOT_NS = "taskmator.task"
+    ROOT_NS = "taskmator.task."
 
     logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class TaskContainer:
         self.task_loader = TaskLoader()
 
         # Load the root task
-        self.task_root = self.instantiate_task('root', self.task_ast, None, self.ROOT_NS + 'CompositeTask')
+        self.task_root = self.instantiate_task('root', self.task_ast, None, 'core.Composite')
         self.task_loader.load(self.task_root, self.task_ast)
 
 
@@ -71,9 +71,8 @@ class TaskContainer:
         """
         type = task_type if task_type else task_spec[u'@type']
 
-
-
-        TaskClass = self._get_class(type)
+        fq_typename = self.ROOT_NS + type + 'Task'
+        TaskClass = self._get_class(fq_typename)
         if (not TaskClass):
             raise Exception('Nonexistent task type [' + type + '].')
 

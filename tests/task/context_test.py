@@ -3,6 +3,7 @@ import unittest
 import logging
 from taskmator.manager import TaskManager
 from taskmator.context import TaskContainer
+from taskmator.task.core import CompositeTask
 
 class CoreTest(unittest.TestCase):
 
@@ -27,6 +28,8 @@ class CoreTest(unittest.TestCase):
         spec = tm.load_spec(test_spec_uri)
         task_container = TaskContainer(spec)
         task = task_container.get_task('root.prepare.create_user')
+        self.assertIsNotNone(task)
+        task = task_container.get_task('root.prepare.create_folders')
         self.assertIsNotNone(task)
 
 

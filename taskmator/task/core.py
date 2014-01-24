@@ -373,11 +373,12 @@ class CompositeTask(Task):
     """
     logger = logging.getLogger(__name__)
 
+    ATTR_INIT_MODE = u'initMode'
     ATTR_EXEC = u'exec'
     ATTR_EXEC_MODE = u'execMode'
 
     # Double underscore makes unique namespace for this class
-    __VALID_ATTRS = [ATTR_EXEC, ATTR_EXEC_MODE]
+    __VALID_ATTRS = [ATTR_INIT_MODE, ATTR_EXEC, ATTR_EXEC_MODE]
 
     def __init__(self, name, parent):
         super(CompositeTask, self).__init__(name, parent)
