@@ -48,15 +48,14 @@ class CommandLineTask(Task):
         # Save the outcome
         self.setResult(out)
 
-        if (code != 0):
+        if (code != Task.CODE_OK):
             self.logger.info("Command [" + cmdLine + "] failed with code:" + str(code))
             self.logger.debug("output:" + out)
             if (self.haltOnError):
                 self.logger.info( "Task [" + self.name + "] Halted.")
-                return code
-
-        self.logger.info("Task [" + self.name + "] Completed.")
-        return code
+        else:
+            self.logger.info("Task [" + self.name + "] Completed.")
+        return (code, out)
 
     def _buildSshCommand(self, keyLocation, host, remoteCommand):
         """
@@ -79,7 +78,7 @@ class CommandLineTask(Task):
             #retval = shellCommand
             return (0, retval.strip())
         except subprocess.CalledProcessError as cpe:
-            return (cpe.returncode, cpe.output);
+            return (cpe.returncode, cpe.output)
 
 
 class OutputReportTask(Task):
@@ -117,7 +116,7 @@ class OutputReportTask(Task):
 
         self.setResult(None)
 
-        return Task.CODE_OK
+        return (Task.CODE_OK, None)
 
 class CronTask(Task):
     """
@@ -130,4 +129,4 @@ class CronTask(Task):
 
     def executeInternal(self, executionContext):
         self.logger.info("Executing " + str(self))
-        return Task.CODE_OK
+        return (Task.CODE_OK, None)

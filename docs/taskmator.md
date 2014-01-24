@@ -67,6 +67,7 @@ The named-task registry contains references to the task using the fully qualifie
 The FQN has direct one-to-one mapping to the AST hierarchical namespace.
 Note that Switch and Iteration Tasks cannon contain subtask (they can only
 execute) other named tasks.
+The FQN is in form of root[.<task-name>]..
 
 #### Output Execution Trace ####
 The Node Tasks (those in the core: CompositeTasks, Switch, and Loop) can
@@ -92,19 +93,20 @@ Implementation
 
 ### ExecutionContext structure ###
 
-ExecutionContext: {
-    task_ast: { <task-spec> }
-    task_registry: {
-        {<fqn>: <reference to the task>}, ...
+    ExecutionContext: {
+        task_container: {
+            task_spec: ...
+            task_root: ...
+        }
+        <synchronized:OrderedDictionary> 
+        execution_trace: [
+            # In the order of start time (or end time?)
+            {<execution-stack-path>: {
+                "start_time": <ISO-time>,
+                "end_time: <ISO-time>,
+                "code":<numeric exit code>,
+                "output": {Output any structure}
+                }
+            }, ...
+        ]
     }
-    <synchronized:OrderedDictionary> execution_trace: [
-        # In the order of start time (or end time?)
-        {<execution-stack-path>: {
-            "start_time": <ISO-time>,
-            "end_time: <ISO-time>,
-            "code":<numeric exit code>,
-            "output": {Output any structure}
-            }
-        }, ...
-    ]
-}

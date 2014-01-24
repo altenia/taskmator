@@ -21,7 +21,8 @@
 
 	"@init_mode": "lazy",
 
-	"cl remote_pull_repo": {
+	"remote_pull_repo": {
+	    "@type": "cl",
 		"@params": {
 			"command":"cd ~/applications/{PROJECT_NAME}; git pull {checkoutBranchCmd}",
 			"ssh":true
@@ -29,7 +30,8 @@
 		"@haltOnError": true 
 	},
 
-	"ct prepare": {
+	"prepare": {
+	    "@type": "ct",
 		"@description": "",
 		"@params": {
 			"PROJECT_NAME": "taskmator",
@@ -39,21 +41,28 @@
 			"sshKeyLocation": "~/.ssh/hostkey.pem"
 		},
 
-		"@execMode": "parallel",
-		
 		"@haltOnError": true,
 
+        "create_user": {"@type": "cl", "@params": {"command":"sudo adduser --system --no-create-home --group ${SERVICE_USER}", "ssh":true},"@haltOnError": true },
+        "create_folders": {"@type": "cl", "@params": {"command":"cd ~; mkdir applications; cd applications; mkdir log; mkdir backup", "ssh":true},"@haltOnError": true },
+        "clone_repo": {"@type": "cl", "@params": {"command":"cd ~/applications; git clone ${branchArg} ${PROJECT_REPO_URL}", "ssh":true},"@haltOnError": true },
+        "change_group": {"@type": "cl", "@params": {"command":"sudo chgrp -R ${SERVICE_USER} ~/applications", "ssh":true},"@haltOnError": true },
+        "register_service": {"@type": "cl", "@params": {"command":"sudo cp ~/applications/${PROJECT_NAME}/bin/{APP_NAME}.conf.${APP_ENV} /etc/init/${APP_NAME}.conf", "ssh":true},"@haltOnError": true },
+        "start_service": {"@type": "cl", "@params": {"command":"sudo start ${APP_NAME}", "ssh":true},"@haltOnError": true },
+
+		"@execMode": "parallel",
 		"@exec": [
-			{"@decl": "cl create_user", "@params": {"command":"sudo adduser --system --no-create-home --group ${SERVICE_USER}", "ssh":true},"@haltOnError": true },
-	        {"@decl": "cl create_folders", "@params": {"command":"cd ~; mkdir applications; cd applications; mkdir log; mkdir backup", "ssh":true},"@haltOnError": true },
-	        {"@decl": "cl clone_repo", "@params": {"command":"cd ~/applications; git clone ${branchArg} ${PROJECT_REPO_URL}", "ssh":true},"@haltOnError": true },
-	        {"@decl": "cl change_group", "@params": {"command":"sudo chgrp -R ${SERVICE_USER} ~/applications", "ssh":true},"@haltOnError": true },
-	        {"@decl": "cl register_service", "@params": {"command":"sudo cp ~/applications/${PROJECT_NAME}/bin/{APP_NAME}.conf.${APP_ENV} /etc/init/${APP_NAME}.conf", "ssh":true},"@haltOnError": true },
-	        {"@decl": "cl start_service", "@params": {"command":"sudo start ${APP_NAME}", "ssh":true},"@haltOnError": true }
-		]
+                "create_user",
+                "create_folders",
+                "clone_repo",
+                "change_group",
+                "register_service",
+                "start_service"
+            ]
 	},
 
-	"ct deploy": {
+	"deploy": {
+	    "@type": "ct",
 		"@description": "Pulls a repository",
 		"@params": {
 			"APP_NAME":"TEST_APP",
@@ -66,18 +75,26 @@
 
 		"@haltOnError": true,
 
+        "remote_service_stop": {"@type": "cl", "@params": {"command":"sudo stop ${APP_NAME}", "ssh":true}, "@haltOnError": true },
+        "remote_change_group": {"@type": "cl", "@params": {"command":"sudo chgrp -R ${SERVICE_USER} ~/applications/${PROJECT_NAME}", "ssh":true},"@haltOnError": true },
+        "remote_restart_service": {"@type": "cl", "@params": {"command":"sudo stop ${APP_NAME}; sudo start ${APP_NAME}", "ssh":true}, "@precond": "'${APP_NAME}'", "@haltOnError": true },
+        "remote_closure_comp": {"@type": "cl", "@params": {"command":"cd ~/applications/${PROJECT_NAME}/js/; ./build.sh", "ssh":true}, "@precond": "'${CLOSURE_COMP}'", "@haltOnError": true },
+        "report": {"@type": "or", "@params": {"command":"cd ~/applications/{PROJECT_NAME}/js/; ./build.sh", "ssh":true}, "@precond": "${CLOSURE_COMP}", "@haltOnError": true },
+        "#root.remote_pull_repo": {"@params": {"this": "is optional"}},
+
 		"@execMode": "sequential",
 		"@exec": [
-	        {"@decl": "cl remote_service_stop", "@params": {"command":"sudo stop ${APP_NAME}", "ssh":true}, "@haltOnError": true },
-	        {"@exec": "#root.remote_pull_repo", "@params": {"this": "is optional"}},
-	        {"@decl": "cl remote_change_group", "@params": {"command":"sudo chgrp -R ${SERVICE_USER} ~/applications/${PROJECT_NAME}", "ssh":true},"@haltOnError": true },
-	        {"@decl": "cl remote_restart_service", "@params": {"command":"sudo stop ${APP_NAME}; sudo start ${APP_NAME}", "ssh":true}, "@precond": "'${APP_NAME}'", "@haltOnError": true },
-	        {"@decl": "cl remote_closure_comp", "@params": {"command":"cd ~/applications/${PROJECT_NAME}/js/; ./build.sh", "ssh":true}, "@precond": "'${CLOSURE_COMP}'", "@haltOnError": true },
-	        {"@decl": "or report", "@params": {"command":"cd ~/applications/{PROJECT_NAME}/js/; ./build.sh", "ssh":true}, "@precond": "${CLOSURE_COMP}", "@haltOnError": true }
-		]
+		    "remote_service_stop",
+		    "#root.remote_pull_repo",
+		    "remote_change_group",
+		    "remote_restart_service",
+		    "remote_closure_comp",
+		    "report"
+	        ]
 	},
 
-	"iter group_deploy": {
+	"group_deploy": {
+	    "@type": "iter",
 		"@description": "For all logins, does a pull_repo",
 		"@params": {
 			"LOGINS": ["taskmator@deployserver1,taskmator@deployserver2"]
@@ -88,7 +105,8 @@
 		"@exec": {"#deploy": {"@params": {}}
 	},
 
-	"switch condition": {
+	"condition": {
+	    "@type": "switch",
 		"@description": "switch",
 		"@params": {
 		    "IGNORE": false
@@ -105,9 +123,10 @@
 
 	},
 
-	"ct test": "proc_etime.task.json",
+	"test": "proc_etime.task.json",
 
-	"cron monitorprocess": {
+	"monitorprocess": {
+	    "@type": "cron",
 		"@description": "Sample cron task",
 		"@params": {
 			"expression": "0 * * * * ",
@@ -119,7 +138,8 @@
 		"@dependsOn": "prepare"
 	},
 
-	"ct proc_etime": {
+	"proc_etime": {
+	    "@type": "ct",
 	    "@description": "Sample cron task",
 		"@params": {
 			"PROC_NAME": "index.js"
@@ -127,12 +147,15 @@
 
 		"@haltOnError": true,
 
+		"get_pid": {"@type": "cl", "@params": {"command":"pgrep ${PROC_NAME}"}, "@haltOnError": true },
+	    "get_etime": {"@type": "cl", "@params": {"PID": "${get_pid.outcome_result}", "command":"ps -p ${PID} -o etime="}, "@haltOnError": true },
+
 		"@execMode": "sequential",
 		"@exec": [
-	        {"@decl": "cl get_pid", "@params": {"command":"pgrep ${PROC_NAME}"}, "@haltOnError": true },
-	        {"@decl": "cl get_etime", "@params": {"PID": "${get_pid.outcome_result}", "command":"ps -p ${PID} -o etime="}, "@haltOnError": true }
-		]
+		        "get_pid",
+		        "get_etime"
+		    ]
 	},
 
-	"@default":"monitorprocess" 
+	"@exec":"monitorprocess"
 }

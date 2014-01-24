@@ -215,6 +215,9 @@ class Task:
     def addChild(self, child):
         self.children[child.name] = child
 
+    def hasChild(self, name):
+        return name in self.children
+
     def getChildren(self):
         return self.children.items()
 
@@ -224,10 +227,26 @@ class Task:
     def getChildAt(self, idx):
         self._children[idx]
 
+    def get_subtask(self, name_path):
+        """
+        @param name_path array of names to resolve the descendant (sub) task
+        """
+        node = self
+        for name in name_path:
+            if (node.hasChild(name)):
+                node = node.getChild(name)
+            else:
+                raise Exception('Nonexistent task with name [' + '.'.join(name_path) + ']' )
+        return node
+
+
     def traverse(self):
         self.__traverse(self)
 
     def __traverse(self, node):
+        """
+        Pending pass function as parameter
+        """
         print (str(node) + "+" + str(len(node.getChildren())))
         if (len(node.getChildren()) > 0):
             for childName, child in node.getChildren():
@@ -293,26 +312,20 @@ class Task:
         """
         return True
 
-    def eval(self):
-        return eval(precond, {"__builtins__": {}})
+    def eval(self, expression):
+        return eval(expression, {"__builtins__": {}})
 
-    def execute(self, executionContext=None):
+    def execute(self, execution_context):
         """
         The main execution method.
         It internally calls executeInternal following the Tempalte Method pattern
+        @type execution_context ExecutionContext
         """
-
-        # Flag that indicates whether or not the execution context was created here
-        # I.e. this is the root task
-        context_created = False
-        if (not executionContext):
-            context_created = True
-            executionContext = ExecutionContext()
 
         precondEval = True
         if (self.precond):
             params = self.getParams()
-            precond = self.applyTemplate(self.precond, params, executionContext)
+            precond = self.applyTemplate(self.precond, params, execution_context)
             precondEval = self.eval(precond)
         if (not precondEval):
             # Precondition evaluated to false, return
@@ -321,17 +334,18 @@ class Task:
         self.lastExecTimeStart = datetime.datetime.now()
         self.state = Task.STATE_RUNNING
 
-        # @todo - the task registry is using static module fqn instead of runtime call path.
-        #         shall we keep as is? What is is already registered?
-        executionContext.registerTask(self.getFqn(), self)
-
-        self.outcome_code = self.executeInternal(executionContext)
+        exit_code, output = self.executeInternal(execution_context)
         self.state = Task.STATE_STOPPED
         self.lastExecTimeStop = datetime.datetime.now()
 
-        if (context_created):
-            executionContext.close()
-        return self.outcome_code
+        # @todo - the task registry is using static module fqn instead of runtime call path.
+        #         shall we keep as is? What is is already registered?
+        execution_context.register_trace(self.getFqn(),
+                                         self.lastExecTimeStart, self.lastExecTimeStop,
+                                         exit_code, output
+        )
+
+        return exit_code, output
 
 
 class TaskThread(threading.Thread):
@@ -340,15 +354,17 @@ class TaskThread(threading.Thread):
     This thread is executed from CompositeTask
     """
 
-    def __init__(self, threadID, name, task, executionContext):
+    def __init__(self, thread_id, name, task, executionContext):
         threading.Thread.__init__(self)
-        self.threadID = threadID
+        self.thread_id = thread_id
         self.name = name
         self.task = task
+        self.code = None
+        self.output = None
         self.executionContext = executionContext
 
     def run(self):
-        self.task.execute(self.executionContext)
+        self.code, self.output = self.task.execute(self.executionContext)
 
 
 class CompositeTask(Task):
@@ -357,13 +373,28 @@ class CompositeTask(Task):
     """
     logger = logging.getLogger(__name__)
 
+    ATTR_EXEC = u'exec'
+    ATTR_EXEC_MODE = u'execMode'
+
     # Double underscore makes unique namespace for this class
-    __VALID_ATTRS = [u'default', u'tasks', u'execMode']
+    __VALID_ATTRS = [ATTR_EXEC, ATTR_EXEC_MODE]
 
     def __init__(self, name, parent):
         super(CompositeTask, self).__init__(name, parent)
+        self._exec = [] # Array of string of task names
 
     def setAttribute(self, attrKey, attrVal):
+        if (attrKey == self.ATTR_EXEC):
+            # There is two possibilities: a string that contains the fqn of
+            # the task to execute, or an array of tasks to execute (either
+            # in sequentially or in parallel depending of the execMode
+            if (isinstance(attrVal, list)):
+                for item in attrVal:
+                    if (isinstance(item, basestring)):
+                        self._exec.append(item)
+                    else:
+                        raise Exception('Element in @exec must be a string')
+
         if (attrKey in self.__VALID_ATTRS):
             self.attribs[attrKey] = attrVal
         else:
@@ -404,15 +435,12 @@ class CompositeTask(Task):
 
         else:
             # Executing in serial
-            lastChild = None
+            code, output = (None, None)
             for name, child in self.getChildren():
-                lastChild = child
-                child.execute(executionContext)
+                code, output = child.execute(executionContext)
             # In serial mode, the last outcome is the compositeTask's outcome
-            code, result = lastChild.getOutcome()
-            self.setResult(result)
 
-        return code
+        return (code, output)
 
 class EchoTask(Task):
     """
@@ -424,7 +452,7 @@ class EchoTask(Task):
         message = self.getParam('message', False)
         self.logger.info("Echo '" + message+ "'")
         self.setResult(message)
-        return Task.CODE_OK
+        return (Task.CODE_OK, message)
 
 
 class SwitchTask(Task):
@@ -440,14 +468,15 @@ class SwitchTask(Task):
         cases = self.getAttribute(u'cases')
 
         # case is the boolean statement, body is the task to execute.
+        code, out = (Task.CODE_OK, None)
         for case, body in cases:
             if self.eval(case):
                 if (body[0] == u'#'):
                     task_fqname = body[1:]
                     task = executionContext.lookupTask(task_fqname)
-                    task.execute()
+                    code, out = task.execute(executionContext)
                 break
-        return Task.CODE_OK
+        return (code, out)
 
 
 class IterationTask(Task):
@@ -468,5 +497,5 @@ class IterationTask(Task):
 
     def executeInternal(self, executionContext):
         self.logger.info("Executing " + str(self))
-        return Task.CODE_OK
+        return (Task.CODE_OK, None)
 
