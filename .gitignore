@@ -40,3 +40,6 @@ nosetests.xml
 
 #OS
 .DS_Store
+
+# Test output
+tests/data/transform/output/
