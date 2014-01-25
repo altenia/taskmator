@@ -3,7 +3,7 @@ from testbase import TaskmatorTestBase
 from taskmator.task import core, util
 from taskmator import context
 
-class CoreTest(TaskmatorTestBase):
+class ManagerTest(TaskmatorTestBase):
 
     def testManager(self):
         print ("Pending")

@@ -29,6 +29,7 @@ class TaskManager:
         context.mark_start()
         task_root.execute(context)
         context.mark_stop()
+        return context
 
     def create_context(self, task_container):
         return ExecutionContext(task_container)
@@ -37,7 +38,9 @@ class TaskManager:
         """
         Method to load a tasks specification
         """
-        spec_file = open(spec_uri, "r")
-        spec_json = spec_file.read();
-        spec = json.loads(spec_json, object_pairs_hook=collections.OrderedDict)
+        spec = None
+        with open(spec_uri, "r") as spec_file:
+        #spec_file = open(spec_uri, "r")
+            spec_json = spec_file.read()
+            spec = json.loads(spec_json, object_pairs_hook=collections.OrderedDict)
         return spec

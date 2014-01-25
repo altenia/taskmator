@@ -45,8 +45,10 @@ class Task:
     """
     __metaclass__ = abc.ABCMeta
 
+    ATTR_PARAMS = u'params'
+
     __VALID_ATTRS = [u'aliases', u'description', u'dependsOn', u'version',
-                     u'modelUri', u'params', u'namespaces', u'load', u'haltOnError', u'precond', u'decl', u'type'
+                     u'modelUri', ATTR_PARAMS, u'namespaces', u'load', u'haltOnError', u'precond', u'decl', u'type'
     ]
 
     SCOPE_SEPARATOR = "/"
@@ -60,7 +62,7 @@ class Task:
     CODE_SKIPPED = -1
 
     def __init__(self, name, parent=None):
-        self.init(name, parent)
+        self._init_internal(name, parent)
 
         # A tuple where first element is the code, and second element is the result
         self.retainResult = True
@@ -74,14 +76,14 @@ class Task:
         # attributes are local data that cannot be overriden
         self.attribs = {}
         # params are used in input for template. It can also be overriden
-        self.params = None
+        self.params = {}
         self.haltOnError = False
         self.precond = None
 
     def __str__(self):
         return self.getFqn() + " [" + self.__class__.__name__ + "]";
 
-    def init(self, name, parent=None):
+    def _init_internal(self, name, parent=None):
         """
         Initialization that is run after deep copying a task instance
         I.e. All other variables are copied over.
@@ -108,7 +110,7 @@ class Task:
         self.children = None
 
         copy_instance = copy.deepcopy(self)
-        copy_instance.init(name, parent)
+        copy_instance._init_internal(name, parent)
 
         self.name = temp_name
         self.parent = temp_parent
@@ -118,14 +120,25 @@ class Task:
 
         return copy_instance
 
+    def init(self):
+        """
+        Task initialization.
+        Inheriting Task class may implement any initialization here.
+        This is called after all attributes are set
+        """
+        self.setParam('TASK_TYPE_NAME', self.__class__.__name__ )
+
     def setAttribute(self, attrKey, attrVal):
-        if (attrKey in self.__VALID_ATTRS):
+        if (attrKey == self.ATTR_PARAMS):
+            self.params = attrVal
+        elif (attrKey in self.__VALID_ATTRS):
             #setattr(self, attrKey, attrVal)
             self.attribs[attrKey] = attrVal;
         else:
             raise Exception('Invalid Attribute "' + attrKey + '"')
 
     def getAttribute(self, attrKey, default=None, executionContext=None, expandTemplate=True):
+
         if (attrKey in self.attribs):
             retval = self.attribs[attrKey]
 
@@ -184,6 +197,8 @@ class Task:
             self.params = params
         else:
             self.params.update(params)
+    def setParam(self, key, value):
+        self.params[key] = value
 
     def hasParam(self, key):
         if (key in self.params):

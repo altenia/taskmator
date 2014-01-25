@@ -107,7 +107,7 @@ class OutputReportTask(Task):
             entry = {"type": task.getTypename(),
                      "name": task.getFqn(),
                      "outcome_code": trace['exit_code'],
-                     "outcome_result": trace['output']
+                     "outcome_result": str(trace['output'])
             }
             tpl = string.Template(format)
             reportrow = tpl.safe_substitute(entry)
@@ -132,3 +132,4 @@ class CronTask(Task):
     def executeInternal(self, executionContext):
         self.logger.info("Executing " + str(self))
         return (Task.CODE_OK, None)
+

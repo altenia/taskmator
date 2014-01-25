@@ -6,7 +6,7 @@ import logging
 
 class TaskmatorTestBase(unittest.TestCase):
 
-    TEST_SPEC_PATH = "../data/sample1.task.json"
+    TEST_SPEC_NAME = "sample1.task.json"
 
     @classmethod
     def setUpClass(cls):
@@ -18,5 +18,5 @@ class TaskmatorTestBase(unittest.TestCase):
 
         logger.setLevel(logging.INFO)
 
-    def setUp(self):
-        self.test_spec_uri = os.path.join(os.path.dirname(__file__), self.TEST_SPEC_PATH)
+    def get_data_path(self, relative_path):
+        return os.path.join(os.path.dirname(__file__), "../data/" + relative_path)

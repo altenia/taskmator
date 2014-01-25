@@ -20,6 +20,7 @@ class TaskFactory:
         type = spec[u'@type']
         instance = self.instantiate(type, name, parent)
         self.load(instance, spec)
+        instance.init()
         return instance
 
     def instantiate(self, task_type, name, parent_task):

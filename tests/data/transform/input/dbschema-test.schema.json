@@ -1,0 +1,105 @@
+{
+    "schema-name": "market",
+    "version": 0.1,
+    "date": "2014-01-14",
+    "description": "Database schema for demand-offer marketplace system",
+
+    "partials": {
+        "common":[
+            {"name":"sid", "type":"auto"},
+            {"name":"create_dt", "type":"timestamp"},
+            {"name":"update_dt", "type":"timestamp"},
+            {"name":"update_seq", "type":"int"},
+            {"name":"created_by", "type":"int"}
+        ]
+    },
+    "entities": {
+        "users": {
+            "fields":[
+                {"name":"sid", "type":"long", "is_nullable": true},
+                {"name":"domain_id", "type":"string", "length":64},
+                {"name":"created_dt", "type":"datetime"},
+                {"name":"updated_dt", "type":"datetime"},
+                {"name":"updated_counter", "type":"int"},
+                {"name":"uuid", "type":"string", "length":128},
+                {"name":"original_domain_id", "type":"string", "length":64},
+                {"name":"id", "type":"string", "length":64},
+                {"name":"password", "type":"string", "length":64},
+                {"name":"first_name", "type":"string", "length":255},
+                {"name":"middle_name", "type":"string", "length":255},
+                {"name":"last_name", "type":"string", "length":255},
+                {"name":"lc_name", "type":"string", "length":255},
+                {"name":"display_name", "type":"string", "length":255},
+                {"name":"bdate", "type":"datetime"},
+                {"name":"phone", "type":"string", "length":32},
+                {"name":"email", "type":"string", "length":64},
+                {"name":"permalink", "type":"string", "length":64},
+                {"name":"activation_code", "type":"string", "length":64},
+                {"name":"security_question", "type":"string", "length":255},
+                {"name":"security_answer", "type":"string", "length":255},
+                {"name":"login_fail_counter", "type":"int"},
+                {"name":"status", "type":"int"},
+                {"name":"default_lang_cd", "type":"string", "length":3},
+                {"name":"timezone", "type":"string", "length":32},
+                {"name":"expiry_dt", "type":"datetime"},
+                {"name":"active_project_sid", "type":"long"},
+                {"name":"type", "type":"string", "length":16},
+                {"name":"params_text", "type":"text"}
+            ]
+        },
+        "categories": {
+            "singular": "category",
+			"fields": [
+                {"name":"sid", "type":"long", "is_nullable": true},
+                {"name":"create_dt", "type":"datetime"},
+                {"name":"modify_counter", "type":"int"},
+                {"name":"last_modified_dt", "type":"datetime"},
+                {"name":"uuid", "type":"string", "length":128},
+                {"name":"parent_sid", "type":"long"},
+                {"name":"kind", "type":"string", "length":255},
+                {"name":"type", "type":"string", "length":32},
+                {"name":"name", "type":"string", "length":255},
+                {"name":"code", "type":"string", "length":255},
+                {"name":"description", "type":"text"},
+                {"name":"image_url", "type":"string", "length":255},
+                {"name":"position", "type":"int"},
+                {"name":"params_text", "type":"text"},
+                {"name":"creator_dto", "type":"com.seednia.module.core.user.dto.UserDto"}
+			]
+		},
+        "organizations": {
+            "fields":[
+                {"name":"sid", "type":"long", "is_nullable": false},
+                {"name":"domain_id", "type":"string", "length":64},
+                {"name":"created_dt", "type":"datetime"},
+                {"name":"updated_dt", "type":"datetime"},
+                {"name":"updated_counter", "type":"int"},
+                {"name":"owner_sid", "type":"long", "is_nullable": false},
+                {"name":"uuid", "type":"string", "length":128},
+                {"name":"parent_sid", "type":"long"},
+                {"name":"name", "type":"string", "length":128},
+                {"name":"name_lc", "type":"string", "length":128},
+                {"name":"inet_domain_name", "type":"string", "length":64},
+                {"name":"country_cd", "type":"string", "length":3},
+                {"name":"state", "type":"string", "length":127},
+                {"name":"district", "type":"string", "length":127},
+                {"name":"address", "type":"string", "length":255},
+                {"name":"postal_code", "type":"string", "length":64},
+                {"name":"description", "type":"text"},
+                {"name":"highlight", "type":"text"},
+                {"name":"found_date", "type":"string", "length":6},
+                {"name":"num_members", "type":"int"},
+                {"name":"num_comments", "type":"int"},
+                {"name":"num_cheers", "type":"int"},
+                {"name":"params_text", "type":"text"}
+            ],
+            "constraints":[
+                {"kind":"foreign", "key":"owner_sid", "reference":"sid", "on": "user"}
+            ],
+            "relations":[
+                {"kind":"has_many", "entity":"categories", "foreign_key":"sid"}
+            ]
+        }
+
+    }
+}
