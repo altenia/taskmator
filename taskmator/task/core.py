@@ -7,9 +7,6 @@ import datetime
 import re
 import string
 
-from taskmator.context import ExecutionContext
-
-
 class ParamTemplate(string.Template):
     """
     Templating for the param: accepts dots
@@ -31,7 +28,7 @@ class TemplateModelAdapter:
                 dotPos = key.rfind(".")
                 taskName = key[0:dotPos]
                 propName = key[dotPos + 1:]
-                taskRef = self.execution_context.lookupTask(taskName)
+                taskRef = self.execution_context.lookup_task(taskName)
                 if (taskRef):
                     if (propName == "outcome_code"):
                         retval = taskRef.getOutcome()[0]
@@ -66,6 +63,7 @@ class Task:
         self.init(name, parent)
 
         # A tuple where first element is the code, and second element is the result
+        self.retainResult = True
         self.outcome_code = None
         self.outcome_result = None
         self.retainOutcome = True
@@ -298,13 +296,6 @@ class Task:
         return self.__class__.__name__
 
 
-    @abc.abstractmethod
-    def executeInternal(self, executionContext):
-        """
-        Concrete classes must implement this method
-        """
-        return
-
     def validate(self):
         """
         Concrete classes must implement this method
@@ -315,13 +306,19 @@ class Task:
     def eval(self, expression):
         return eval(expression, {"__builtins__": {}})
 
+    @abc.abstractmethod
+    def executeInternal(self, executionContext):
+        """
+        Concrete classes must implement this method
+        """
+        return
+
     def execute(self, execution_context):
         """
         The main execution method.
-        It internally calls executeInternal following the Tempalte Method pattern
+        It internally calls executeInternal following the Template Method pattern
         @type execution_context ExecutionContext
         """
-
         precondEval = True
         if (self.precond):
             params = self.getParams()
@@ -329,7 +326,7 @@ class Task:
             precondEval = self.eval(precond)
         if (not precondEval):
             # Precondition evaluated to false, return
-            return Task.CODE_SKIPPED
+            return Task.CODE_SKIPPED, None
 
         self.lastExecTimeStart = datetime.datetime.now()
         self.state = Task.STATE_RUNNING
@@ -340,7 +337,7 @@ class Task:
 
         # @todo - the task registry is using static module fqn instead of runtime call path.
         #         shall we keep as is? What is is already registered?
-        execution_context.register_trace(self.getFqn(),
+        execution_context.register_trace(self, self.getFqn(),
                                          self.lastExecTimeStart, self.lastExecTimeStop,
                                          exit_code, output
         )
@@ -387,14 +384,18 @@ class CompositeTask(Task):
     def setAttribute(self, attrKey, attrVal):
         if (attrKey == self.ATTR_EXEC):
             # There is two possibilities: a string that contains the fqn of
-            # the task to execute, or an array of tasks to execute (either
-            # in sequentially or in parallel depending of the execMode
-            if (isinstance(attrVal, list)):
+            # the task to execute, or a string array of task names to execute
+            # either in sequentially or in parallel depending of the execMode
+            if (isinstance(attrVal, basestring)):
+                self._exec.append(attrVal)
+            elif (isinstance(attrVal, list)):
                 for item in attrVal:
                     if (isinstance(item, basestring)):
                         self._exec.append(item)
                     else:
                         raise Exception('Element in @exec must be a string')
+            else:
+                raise Exception('The value of @exec has invalid type ' + str(type(attrVal)) + ', only string or array of string is allowed.')
 
         if (attrKey in self.__VALID_ATTRS):
             self.attribs[attrKey] = attrVal
@@ -403,45 +404,51 @@ class CompositeTask(Task):
 
 
     def executeInternal(self, executionContext):
+        """
+        Executes task(s) specified in the @exec attribute
+        """
         self.logger.info("Executing " + str(self))
 
         # Find which task(s) to execute.
-        taskToExec = self.getAttribute(u'exec', u'default')
-        if (isinstance(taskToExec, basestring)):
-            self.getChild(taskToExec)
+        task_names_to_exec = self._exec if len(self._exec) > 0 else [u'default']
 
+        tasks_to_exec = []
+        for task_name_to_exec in task_names_to_exec:
+            task_fqn = task_name_to_exec if task_name_to_exec.startswith('root') \
+                else self.getFqn() + '.' + task_name_to_exec
+            tasks_to_exec.append(executionContext.get_task_container().get_task(task_fqn))
 
-        execMode = self.getAttribute(u'execMode', u'sequential')
-        self.logger.info("Executing in " + execMode + " mode")
+        exec_mode = self.getAttribute(u'execMode', u'sequential')
+        self.logger.info("ExecMode: " + exec_mode)
 
-        code = Task.CODE_OK
-        if (execMode == u'parallel'):
+        code, output = (Task.CODE_OK, None)
+        if (exec_mode == u'parallel'):
             taskThreads = []
-            for name, child in self.getChildren():
+            for task_to_exec in tasks_to_exec:
                 #print (str(child))
-                taskThread = TaskThread(1, "Thread-" + child.name, child, executionContext)
+                taskThread = TaskThread(1, "Thread-" + task_to_exec.name, task_to_exec, executionContext)
                 taskThreads.append(taskThread)
                 try:
                     taskThread.start()
                 except:
-                    print "Error: unable to start thread"
+                    self.logger.error("Error: unable to start thread")
 
             self.logger.info("Joining all threads")
             for thread in taskThreads:
                 try:
                     taskThread.join()
                 except:
-                    print "Error: unable to join thread"
+                    self.logger.error("Error: unable to join thread")
             # @todo Assign the result value
 
         else:
             # Executing in serial
-            code, output = (None, None)
-            for name, child in self.getChildren():
-                code, output = child.execute(executionContext)
+            for task_to_exec in tasks_to_exec:
+                code, output = task_to_exec.execute(executionContext)
             # In serial mode, the last outcome is the compositeTask's outcome
 
-        return (code, output)
+        # Composite returns None as output
+        return (code, None)
 
 class EchoTask(Task):
     """
@@ -452,7 +459,7 @@ class EchoTask(Task):
     def executeInternal(self, executionContext):
         message = self.getParam('message', False)
         self.logger.info("Echo '" + message+ "'")
-        self.setResult(message)
+        self.setOutcome(Task.CODE_OK, message)
         return (Task.CODE_OK, message)
 
 

@@ -5,13 +5,17 @@ from taskmator.context import TaskContainer, ExecutionContext
 
 class TaskManager:
     """
-    Class that creates execution contexts
+    The class that manages tasks.
+    There could be multiple specification loaded.
     """
 
     def __init__(self):
         self.task_containers = {}
 
     def start_task(self, spec_uri):
+        """
+        Starts a task
+        """
         task_container = None
         if (spec_uri in self.task_containers):
             task_container = self.task_containers[spec_uri]

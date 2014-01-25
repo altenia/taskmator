@@ -3,6 +3,8 @@ import taskmator.task.core
 import json
 import collections
 
+# DEPRECATED: Using TaskManager & TaskContainer
+
 class TaskLoader:
     def createTask(self, parent, type, name):
         """

@@ -45,9 +45,6 @@ class CommandLineTask(Task):
             self.logger.info("Running: " + cmdLine)
             code, out = self._runCommand(cmdLine)
 
-        # Save the outcome
-        self.setResult(out)
-
         if (code != Task.CODE_OK):
             self.logger.info("Command [" + cmdLine + "] failed with code:" + str(code))
             self.logger.debug("output:" + out)
@@ -55,6 +52,10 @@ class CommandLineTask(Task):
                 self.logger.info( "Task [" + self.name + "] Halted.")
         else:
             self.logger.info("Task [" + self.name + "] Completed.")
+
+        # Save the outcome
+        self.setOutcome(code, out)
+
         return (code, out)
 
     def _buildSshCommand(self, keyLocation, host, remoteCommand):
@@ -76,7 +77,7 @@ class CommandLineTask(Task):
             retval = subprocess.check_output( shellCommand, shell=True, stderr=subprocess.STDOUT)
             # debug
             #retval = shellCommand
-            return (0, retval.strip())
+            return (Task.CODE_OK, retval.strip())
         except subprocess.CalledProcessError as cpe:
             return (cpe.returncode, cpe.output)
 
@@ -100,12 +101,13 @@ class OutputReportTask(Task):
             filename = stream_type[5:]
             writer = open(filename, "w")
 
-        tasks = executionContext.tasks()
-        for task in tasks:
+        traces = executionContext.traces()
+        for trace in traces:
+            task = trace['task_ref']
             entry = {"type": task.getTypename(),
                      "name": task.getFqn(),
-                     "outcome_code": task.getOutcome()[0],
-                     "outcome_result": task.getOutcome()[1]
+                     "outcome_code": trace['exit_code'],
+                     "outcome_result": trace['output']
             }
             tpl = string.Template(format)
             reportrow = tpl.safe_substitute(entry)
@@ -114,7 +116,7 @@ class OutputReportTask(Task):
         if (is_file):
             writer.close()
 
-        self.setResult(None)
+        self.setOutcome(Task.CODE_OK, None)
 
         return (Task.CODE_OK, None)
 
