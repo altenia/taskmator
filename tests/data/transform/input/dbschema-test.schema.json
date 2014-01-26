@@ -16,7 +16,7 @@
     "entities": {
         "users": {
             "fields":[
-                {"name":"sid", "type":"long", "is_nullable": true},
+                {"name":"sid", "type":"auto", "is_nullable": true},
                 {"name":"domain_id", "type":"string", "length":64},
                 {"name":"created_dt", "type":"datetime"},
                 {"name":"updated_dt", "type":"datetime"},
@@ -50,7 +50,7 @@
         "categories": {
             "singular": "category",
 			"fields": [
-                {"name":"sid", "type":"long", "is_nullable": true},
+                {"name":"sid", "type":"auto", "is_nullable": true},
                 {"name":"create_dt", "type":"datetime"},
                 {"name":"modify_counter", "type":"int"},
                 {"name":"last_modified_dt", "type":"datetime"},

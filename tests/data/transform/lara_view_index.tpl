@@ -20,19 +20,9 @@
         return True
 %>
 % for entity_name, entity_def in model['entities'].iteritems():
-<!-- app/views/${entity_name}/edit.blade.php -->
+<!-- app/views/${entity_name}/index.blade.php -->
 
 <div class="container">
-
-<nav class="navbar navbar-inverse">
-	<div class="navbar-header">
-		<a class="navbar-brand" href="{{ URL::to('nerds') }}">Nerd Alert</a>
-	</div>
-	<ul class="nav navbar-nav">
-		<li><a href="{{ URL::to('nerds') }}">View All Nerds</a></li>
-		<li><a href="{{ URL::to('nerds/create') }}">Create a Nerd</a>
-	</ul>
-</nav>
 
 <h1>All the records</h1>
 
