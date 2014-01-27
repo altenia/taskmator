@@ -25,7 +25,7 @@
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
  * Add following line in app/routes.php
- * Route::resource('${get_singular(entity_name, False)}', '${get_singular(entity_name, True)}Controller');
+ * Route::resource('${entity_name}', '${get_singular(entity_name, True)}Controller');
  */
 class ${get_singular(entity_name, True)}Controller extends \BaseController {
 
@@ -38,9 +38,9 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function index()
 	{
-		$list = ${get_singular(entity_name, True)}::all();
+		$records = ${get_singular(entity_name, True)}::all();
 		$this->layout->content = View::make('${entity_name}.index')
-		    ->with('list', $list);
+		    ->with('records', $records);
 	}
 
 	/**
@@ -100,7 +100,10 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function update($id)
 	{
-		//
+		$data = Input::all();
+        $record = ${get_singular(entity_name, True)}::find($id);
+        $record->fill($data);
+        $record->save();
 	}
 
 	/**

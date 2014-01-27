@@ -22,6 +22,7 @@
 % for entity_name, entity_def in model['entities'].iteritems():
 <!-- app/views/${entity_name}/edit.blade.php -->
 
+@section('content')
 <div class="container">
 
 <h1>Edit {{ $record->name }}</h1>
@@ -29,7 +30,8 @@
 <!-- if there are creation errors, they will show here -->
 {{ HTML::ul($errors->all()) }}
 
-{{ Form::model($record, array('route' => array('${entity_name}.update', $record->id), 'method' => 'PUT')) }}
+// Make sure that the primaryKey column name is sid
+{{ Form::model($record, array('route' => array('${entity_name}.update', $record->sid), 'method' => 'PUT')) }}
 
 % for field in entity_def['fields']:
     % if is_fillable(field):
@@ -45,5 +47,5 @@
 {{ Form::close() }}
 
 </div> <!-- container -->
-
+@show
 % endfor

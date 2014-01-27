@@ -22,6 +22,7 @@
 % for entity_name, entity_def in model['entities'].iteritems():
 <!-- app/views/${entity_name}/index.blade.php -->
 
+@section('content')
 <div class="container">
 
 <h1>All the records</h1>
@@ -40,23 +41,23 @@
 		</tr>
 	</thead>
 	<tbody>
-	@foreach($record as $key => $value)
+	@foreach($records as $key => $value)
 		<tr>
 % for field in entity_def['fields']:
-			<td>{{ $value->id }}</td>
+			<td>{{ $value->${field['name']} }}</td>
 % endfor
 
 			<!-- we will also add show, edit, and delete buttons -->
 			<td>
 
-				<!-- delete the record (uses the destroy method DESTROY /nerds/{id} -->
+				<!-- delete the record (uses the destroy method DESTROY /${entity_name}/{id} -->
 				<!-- we will add this later since its a little more complicated than the other two buttons -->
 
-				<!-- show the record (uses the show method found at GET /nerds/{id} -->
-				<a class="btn btn-small btn-success" href="{{ URL::to('nerds/' . $value->id) }}">Show this Nerd</a>
+				<!-- show the record (uses the show method found at GET /${entity_name}/{id} -->
+				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->id) }}">Show this ${get_singular(entity_name)}</a>
 
-				<!-- edit this nerd (uses the edit method found at GET /nerds/{id}/edit -->
-				<a class="btn btn-small btn-info" href="{{ URL::to('nerds/' . $value->id . '/edit') }}">Edit this Nerd</a>
+				<!-- edit this nerd (uses the edit method found at GET /${entity_name}/{id}/edit -->
+				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->id . '/edit') }}">Edit this ${get_singular(entity_name)}</a>
 
 			</td>
 		</tr>
@@ -65,5 +66,5 @@
 </table>
 
 </div> <!-- container -->
-
+@show
 % endfor

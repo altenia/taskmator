@@ -41,6 +41,21 @@ class ${get_singular(entity_name, True)} extends Eloquent {
     protected $table = '${entity_name}';
 
     /**
+	 * The primary key column name.
+	 *
+	 * @var string
+	 */
+	protected $primaryKey = 'sid';
+
+	/**
+	 * To disable created_at and updated_at.
+	 *
+	 * @var string
+	 */
+	public static $timestamps = false;
+
+
+    /**
 	 * The field list for mass assignment.
 	 *
 	 * @var array
