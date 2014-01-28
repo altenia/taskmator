@@ -51,7 +51,10 @@
 			<td>
 
 				<!-- delete the record (uses the destroy method DESTROY /${entity_name}/{id} -->
-				<!-- we will add this later since its a little more complicated than the other two buttons -->
+                {{ Form::open(array('url' => '${entity_name}/' . $value->sid, 'class' => 'pull-right')) }}
+                    {{ Form::hidden('_method', 'DELETE') }}
+                    {{ Form::submit('Delete', array('class' => 'btn btn-warning')) }}
+                {{ Form::close() }}
 
 				<!-- show the record (uses the show method found at GET /${entity_name}/{id} -->
 				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
