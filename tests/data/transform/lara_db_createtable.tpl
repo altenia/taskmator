@@ -89,10 +89,7 @@ class Create${entity_name.capitalize()}Table extends Migration {
 	 */
 	public function down()
 	{
-		Schema::table('${entity_name}', function(Blueprint $table)
-		{
-			//
-		});
+		Schema::dropIfExists('${entity_name}');
 	}
 
 }

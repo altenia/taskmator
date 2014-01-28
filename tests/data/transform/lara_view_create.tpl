@@ -25,25 +25,20 @@
 @section('content')
 <div class="container">
 
-<!-- @todo: properly set the field name to be displayed as title -->
-<h1>Edit {{ $record->name }}</h1>
+<h1>Create New</h1>
 
 <!-- if there are creation errors, they will show here -->
 {{ HTML::ul($errors->all()) }}
 
-<!-- @todo: Make sure that the primaryKey column name is sid -->
-{{ Form::model($record, array('route' => array('${entity_name}.update', $record->sid), 'method' => 'PUT', 'class' => 'form-horizontal')) }}
+// Make sure that the primaryKey column name is sid
+{{ Form::open(array('url' => '${entity_name}', 'class' => 'form-horizontal')) }}
 
-<!--
-    @todo: Remove non-editable fields.
-           Add client-side validation.
--->
 % for field in entity_def['fields']:
     % if is_fillable(field):
 	<div class="form-group">
 		{{ Form::label('${field["name"]}', '${field["name"].capitalize()}', array('class' => 'col-sm-2 control-label')) }}
 		<div class="col-sm-10">
-		    {{ Form::text('${field["name"]}', null, array('class' => 'form-control')) }}
+		    {{ Form::text('${field["name"]}', Input::old('${field["name"]}'), array('class' => 'form-control')) }}
 		</div>
 	</div>
 	% endif
@@ -51,7 +46,7 @@
 
 	<div class="form-group">
     	<div class="col-sm-offset-2 col-sm-10">
-	{{ Form::submit('Update', array('class' => 'btn btn-primary')) }}
+	{{ Form::submit('Create', array('class' => 'btn btn-primary')) }}
 	    </div>
 	</div>
 

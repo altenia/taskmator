@@ -54,10 +54,11 @@
 				<!-- we will add this later since its a little more complicated than the other two buttons -->
 
 				<!-- show the record (uses the show method found at GET /${entity_name}/{id} -->
-				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->id) }}">Show this ${get_singular(entity_name)}</a>
+				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
+				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->sid) }}">Show this ${get_singular(entity_name)}</a>
 
-				<!-- edit this nerd (uses the edit method found at GET /${entity_name}/{id}/edit -->
-				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->id . '/edit') }}">Edit this ${get_singular(entity_name)}</a>
+				<!-- edit this record (uses the edit method found at GET /${entity_name}/{id}/edit -->
+				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->sid . '/edit') }}">Edit this ${get_singular(entity_name)}</a>
 
 			</td>
 		</tr>
