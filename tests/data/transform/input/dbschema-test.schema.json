@@ -16,7 +16,7 @@
     "entities": {
         "users": {
             "fields":[
-                {"name":"sid", "type":"auto", "is_nullable": true},
+                {"name":"sid", "type":"auto", "is_nullable": true, "validation": "required|alpha_num|min:6"},
                 {"name":"domain_id", "type":"string", "length":64},
                 {"name":"created_dt", "type":"datetime"},
                 {"name":"updated_dt", "type":"datetime"},
@@ -24,15 +24,15 @@
                 {"name":"uuid", "type":"string", "length":128},
                 {"name":"original_domain_id", "type":"string", "length":64},
                 {"name":"id", "type":"string", "length":64},
-                {"name":"password", "type":"string", "length":64},
-                {"name":"first_name", "type":"string", "length":255},
+                {"name":"password", "type":"string", "length":64, "validation": "required|alpha_num|min:6|confirmed"},
+                {"name":"first_name", "type":"string", "length":255, "validation": "required|alpha|min:2"},
                 {"name":"middle_name", "type":"string", "length":255},
                 {"name":"last_name", "type":"string", "length":255},
                 {"name":"lc_name", "type":"string", "length":255},
                 {"name":"display_name", "type":"string", "length":255},
                 {"name":"bdate", "type":"datetime"},
                 {"name":"phone", "type":"string", "length":32},
-                {"name":"email", "type":"string", "length":64},
+                {"name":"email", "type":"string", "length":64, "validation": "required|email|unique:users"},
                 {"name":"permalink", "type":"string", "length":64},
                 {"name":"activation_code", "type":"string", "length":64},
                 {"name":"security_question", "type":"string", "length":255},

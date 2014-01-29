@@ -23,6 +23,13 @@
             fillables.append(field['name'])
         return '\''+ '\',\''.join(fillables) + '\''
 
+    def get_validation_entries(fields):
+        entries = []
+        for field in fields:
+            if ('validation' in field):
+		        entries.append("'" + field['name'] + "' => '" + field['validation'] + "'")
+        return ",\n\t\t".join(entries)
+
 %><?php
 /**
  * Models from schema: ${ model['schema-name'] } version ${ model['version'] }
@@ -62,6 +69,24 @@ class ${get_singular(entity_name, True)} extends Eloquent {
 	 */
     protected $fillable = array(${get_fillables(entity_def['fields'])});
 
+    /**
+     * Validation rules
+     *
+     * @var array
+     */
+    private static $validation_rules = array(
+        ${ get_validation_entries(entity_def['fields']) }
+    	);
+
+    /**
+     * Returns the validation object
+     */
+    public static function validator($fields)
+    {
+    	$validator = Validator::make($fields, static::$validation_rules);
+
+    	return $validator;
+    }
 
 % if ('relations' in entity_def):
 % for relation in entity_def['relations']:

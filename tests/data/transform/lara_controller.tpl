@@ -60,25 +60,34 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function store()
 	{
-	    // @todo: Validate input
-
 		$data = Input::all();
-        $record = new User();
-        $record->fill($data);
 
-        /*
-         * @todo: assign default values as needed
-        $now = new DateTime;
-        $now_str = $now->format('Y-m-d H:i:s');
-        $record->uuid = uniqid();
-        $record->created_dt = $now_str;
-        $record->updated_dt = $now_str;
-        */
-        $record->save();
+		$validator = User::validator($data);
+        if ($validator->passes()) {
+            $record = new User();
+            $record->fill($data);
 
-        // @todo: Redirect to proper URL
-        Session::flash('message', 'Successfully updated!');
-        return Redirect::to('${entity_name}');
+            /*
+             * @todo: assign default values as needed
+             */
+            $now = new DateTime;
+            $now_str = $now->format('Y-m-d H:i:s');
+            $record->uuid = uniqid();
+            $record->created_dt = $now_str;
+            $record->updated_dt = $now_str;
+            */
+            $record->save();
+
+            // @todo: Redirect to proper URL
+            Session::flash('message', 'Successfully updated!');
+            return Redirect::to('${entity_name}');
+        } else {
+            // Redirecting to same form
+            return Redirect::to('${entity_name}/create')
+                ->withErrors($validator);
+                // Uncomment following line if applicable
+                //->withInput(Input::except('password'));
+        }
 	}
 
 	/**
@@ -121,13 +130,20 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	    // @todo: Validate input
 
 		$data = Input::all();
-        $record = ${get_singular(entity_name, True)}::find($id);
-        $record->fill($data);
-        $record->save();
+		$validator = User::validator($data);
+        if ($validator->passes()) {
+            $record = ${get_singular(entity_name, True)}::find($id);
+            $record->fill($data);
+            $record->save();
 
-        // @todo: Redirect to proper URL
-        Session::flash('message', 'Successfully updated!');
-        return Redirect::to('${entity_name}');
+            // @todo: Redirect to proper URL
+            Session::flash('message', 'Successfully updated!');
+            return Redirect::to('${entity_name}');
+        } else {
+            return Redirect::to('${entity_name}/' . $id . '/edit')
+                ->withErrors($validator)
+                ->withInput(Input::except('password'));
+        }
 	}
 
 	/**
