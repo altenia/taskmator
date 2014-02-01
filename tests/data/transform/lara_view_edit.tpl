@@ -41,7 +41,7 @@
 % for field in entity_def['fields']:
     % if is_fillable(field):
 	<div class="form-group">
-		{{ Form::label('${field["name"]}', '${field["name"].capitalize()}', array('class' => 'col-sm-2 control-label')) }}
+		{{ Form::label('${field["name"]}', Lang::get('${entity_name}.${field["name"]}'), array('class' => 'col-sm-2 control-label')) }}
 		<div class="col-sm-10">
 		    {{ Form::text('${field["name"]}', null, array('class' => 'form-control')) }}
 		</div>

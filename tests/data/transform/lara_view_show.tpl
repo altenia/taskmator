@@ -32,7 +32,7 @@
 <dl class="dl-horizontal">
 % for field in entity_def['fields']:
     % if is_fillable(field):
-	<dt>${field["name"].capitalize()}</dt>
+	<dt>{{ Lang::get('${entity_name}.${field["name"]}') }}</dt>
     <dd>{{ $record->${field["name"]} }}</dd>
 	% endif
 % endfor

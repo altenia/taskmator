@@ -36,7 +36,7 @@
 	<thead>
 		<tr>
 % for field in entity_def['fields']:
-			<td>${field["name"].capitalize()}</td>
+			<td>{{ Lang::get('${entity_name}.${field["name"]}') }}</td>
 % endfor
 		</tr>
 	</thead>
