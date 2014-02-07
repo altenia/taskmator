@@ -12,6 +12,7 @@ setup(
     license='MIT, see LICENCE.txt',
     description='Task automation framework',
     long_description=open('README.md').read(),
+    scripts=['bin/taskmate'],
     include_package_data=True,
     install_requires=['mako'],
 )

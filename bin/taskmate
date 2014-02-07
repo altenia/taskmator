@@ -1,0 +1,38 @@
+#!/usr/bin/python
+import sys
+import argparse
+import logging
+from taskmator.manager import TaskManager
+
+
+class MainApp:
+
+    logger = logging.getLogger("taskmator")
+    def __init__(self):
+        formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
+        sh = logging.StreamHandler()
+        sh.setFormatter(formatter)
+        self.logger.addHandler(sh)
+
+        self.logger.setLevel(logging.INFO)
+
+    def execute(self):
+        # Parse arguments
+        parser = argparse.ArgumentParser(description="Task executor")
+        parser.add_argument('file', help="The task file in json.", default="taskmator")
+        parser.add_argument('-loglevel', help="Log level")
+        args = parser.parse_args()
+
+        #logger.setLevel()
+
+        task_manager = TaskManager()
+        try:
+            context = task_manager.start_task(args.file)
+        except:
+            e = sys.exc_info()[0]
+            self.logger.error(e)
+
+        sys.exit(0)
+
+main_app = MainApp()
+main_app.execute()

@@ -1,3 +1,6 @@
+PACKAGING
+=========
+
 Packaging as python module requires
 setup.py and MANIFEST.in files (see the content of those files)
 
@@ -12,8 +15,19 @@ $pip install --user dist/Taskmator-0.x.tar.gz
 To uninstall the package:
 $pip uninstall Taskmator
 
+
+NOTE
+====
+
+Do not make the script name (under /bin) same as the main package name.
+It wil conflict and will throw
+"ImportError: cannot import name <your-dup-name>"
+
+
 REFERENCES
+==========
 https://docs.djangoproject.com/en/dev/intro/reusable-apps/#packaging-your-app
 http://guide.python-distribute.org/quickstart.html
 http://guide.python-distribute.org/quickstart.html#register-your-package-with-the-python-package-index-pypi
 http://bruno.im/2010/may/05/packaging-django-reusable-app/
+http://docs.python.org/2/distutils/setupscript.html#installing-scripts
