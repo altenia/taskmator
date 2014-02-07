@@ -1,12 +1,7 @@
-taskmator
+Taskmator
 =========
 
-Task automation tool
+Taskmator is a task runner tool built on Python. It reads in JSON file
+that describes the tasks.
 
 
-WORKING ON:
-    Task instantiation:
-        issue: the ast does not have pointer to parent for the alias lookup
-        For the moment, no aliasing
-
-    "gen_db", "gen_model", "gen_controller", "gen_views"

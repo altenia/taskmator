@@ -1,0 +1,3 @@
+include CHANGES.txt README.md LICENSE.txt
+recursive-include taskmator *.py
+recursive-include docs *

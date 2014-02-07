@@ -8,6 +8,7 @@ class TaskManager:
     The class that manages tasks.
     There could be multiple specification loaded.
     """
+    logger = logging.getLogger(__name__)
 
     def __init__(self):
         self.task_containers = {}
@@ -26,6 +27,7 @@ class TaskManager:
 
         task_root = task_container.get_root()
         context = self.create_context(task_container)
+        self.logger.info("Starting " + spec_uri)
         context.mark_start()
         task_root.execute(context)
         context.mark_stop()
@@ -39,6 +41,7 @@ class TaskManager:
         Method to load a tasks specification
         """
         spec = None
+        self.logger.info("Loading " + spec_uri)
         with open(spec_uri, "r") as spec_file:
         #spec_file = open(spec_uri, "r")
             spec_json = spec_file.read()

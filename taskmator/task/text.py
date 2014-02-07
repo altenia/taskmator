@@ -1,15 +1,15 @@
 __author__ = 'ysahn'
 
-import collections
 import logging
 import json
 import os
 import glob
 import collections
 
-from taskmator.task.core import Task
 from mako.lookup import TemplateLookup
 from mako.template import Template
+
+from taskmator.task.core import Task
 
 
 class TransformTask(Task):

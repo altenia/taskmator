@@ -4,7 +4,6 @@ import logging
 import collections
 import threading
 import datetime
-import re
 import string
 
 class ParamTemplate(string.Template):

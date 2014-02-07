@@ -1,0 +1,19 @@
+Packaging as python module requires
+setup.py and MANIFEST.in files (see the content of those files)
+
+The from the command console, in the root folder run
+$python setup.py sdist
+
+It will create a directory `dist` and builds the package, Taskmator-0.1.tar.gz
+
+To install the package do
+$pip install --user dist/Taskmator-0.x.tar.gz
+
+To uninstall the package:
+$pip uninstall Taskmator
+
+REFERENCES
+https://docs.djangoproject.com/en/dev/intro/reusable-apps/#packaging-your-app
+http://guide.python-distribute.org/quickstart.html
+http://guide.python-distribute.org/quickstart.html#register-your-package-with-the-python-package-index-pypi
+http://bruno.im/2010/may/05/packaging-django-reusable-app/
