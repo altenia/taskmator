@@ -24,7 +24,7 @@
         if ('is_unique' in field and field['is_unique']):
             modifs.append('->unique()')
         if ('default' in field):
-            modifs.append('->default(\''+ field['default'] + '\')')
+            modifs.append('->default(\''+ str(field['default']) + '\')')
 
         return ''.join(modifs)
 
