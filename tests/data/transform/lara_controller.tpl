@@ -62,7 +62,7 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	{
 		$data = Input::all();
 
-		$validator = User::validator($data);
+		$validator = ${get_singular(entity_name, True)}::validator($data);
         if ($validator->passes()) {
             $record = new User();
             $record->fill($data);
@@ -130,7 +130,7 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	    // @todo: Validate input
 
 		$data = Input::all();
-		$validator = User::validator($data);
+		$validator = ${get_singular(entity_name, True)}::validator($data);
         if ($validator->passes()) {
             $record = ${get_singular(entity_name, True)}::find($id);
             $record->fill($data);

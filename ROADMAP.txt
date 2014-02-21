@@ -1,0 +1,14 @@
+# Features
+
+## Taskmator 0.1
+- CommandLineTask (ok)
+- TransformTask (ok)
+- Interactive Taskspec.json generator (A task by itself)
+- SwitchTask
+- IteratorTask
+- FileReaderTask (or Plugin)
+
+## Taskmator 0.1.1
+- CronTask
+- ReplaceTask
+- HttpRequestTask
