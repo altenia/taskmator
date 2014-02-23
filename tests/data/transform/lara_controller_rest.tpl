@@ -78,15 +78,18 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	{
 		$data = Input::all();
 
-		$validation = ${service_call(entity_name, 'create', True)}($data);
+		$validator = ${service_call(entity_name, 'create', True)}($data);
 
-        if (empty($validation)) {
+        if (empty($validator)) {
             return Response::json(array(
                 'error' => false),
                 200
             );
         } else {
-             return $validator->messages()->toJson();
+            return Response::json(array(
+                'error' => $validator->messages()->getMessages()),
+                400
+            );
         }
 	}
 
@@ -123,15 +126,18 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	public function update($id)
 	{
 		$data = Input::all();
-		$validation = ${service_call(entity_name, 'update', True)}($id, $data);
+		$validator = ${service_call(entity_name, 'update', True)}($id, $data);
 
-        if (empty($validation)) {
+        if (empty($validator)) {
             return Response::json(array(
                 'error' => false),
                 200
             );
         } else {
-             return $validator->messages()->toJson();
+            return Response::json(array(
+                'error' => $validator->messages()->getMessages()),
+                400
+            );
         }
 	}
 

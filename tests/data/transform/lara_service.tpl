@@ -45,7 +45,7 @@ class ${get_singular(entity_name, True)}Service extends \BaseService {
 	 */
 	public function list${name_for_suffix(entity_name, False)}($queryParams, $offset = 0, $limit=100)
 	{
-		$records = ${get_singular(entity_name, True)}::all();
+		$records = \${get_singular(entity_name, True)}::all();
 		return $records;
 	}
 
@@ -59,15 +59,15 @@ class ${get_singular(entity_name, True)}Service extends \BaseService {
 	public function create${name_for_suffix(entity_name)}($data)
 	{
 
-		$validator = ${get_singular(entity_name, True)}::validator($data);
+		$validator = \${get_singular(entity_name, True)}::validator($data);
         if ($validator->passes()) {
-            $record = new ${get_singular(entity_name, True)}();
+            $record = new \${get_singular(entity_name, True)}();
             $record->fill($data);
 
             /*
              * @todo: assign default values as needed
              */
-            $now = new DateTime;
+            $now = new \DateTime;
             $now_str = $now->format('Y-m-d H:i:s');
             $record->uuid = uniqid();
             $record->created_dt = $now_str;
@@ -88,7 +88,7 @@ class ${get_singular(entity_name, True)}Service extends \BaseService {
 	 */
 	public function get${name_for_suffix(entity_name)}($id)
 	{
-		$record = ${get_singular(entity_name, True)}::find($id);
+		$record = \${get_singular(entity_name, True)}::find($id);
 
 		return $record;
 	}
@@ -102,10 +102,14 @@ class ${get_singular(entity_name, True)}Service extends \BaseService {
 	 */
 	public function update${name_for_suffix(entity_name)}($id, $data)
 	{
-		$validator = ${get_singular(entity_name, True)}::validator($data);
+		$validator = \${get_singular(entity_name, True)}::validator($data);
         if ($validator->passes()) {
-            $record = ${get_singular(entity_name, True)}::find($id);
+            $record = \${get_singular(entity_name, True)}::find($id);
             $record->fill($data);
+
+            $now = new \DateTime;
+            $now_str = $now->format('Y-m-d H:i:s');
+            $record->updated_dt = $now_str;
             $record->save();
             return null;
         } else {
@@ -122,7 +126,7 @@ class ${get_singular(entity_name, True)}Service extends \BaseService {
 	public function destroy${name_for_suffix(entity_name)}($id)
 	{
 		// delete
-		$record = ${get_singular(entity_name, True)}::find($id);
+		$record = \${get_singular(entity_name, True)}::find($id);
 		if (!empty($record)) {
 		    $record->delete();
 		    return true;
