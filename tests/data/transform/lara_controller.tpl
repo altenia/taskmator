@@ -14,6 +14,16 @@
             retval = retval.capitalize();
         return retval
 
+    # Camel and capitalize
+    def name_for_suffix(name, singular=True):
+        namex = name
+        if (singular):
+            namex = get_singular(name);
+        return underscore_to_camel(namex).capitalize();
+
+    def service_call(name, method, singular=True):
+        return '$this->' + get_singular(entity_name, False) + 'Service->' + method + name_for_suffix(entity_name, singular);
+
 %><?php
 /**
  * Models from schema: ${ model['schema-name'] } version ${ model['version'] }
@@ -24,12 +34,24 @@
 
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
- * Add following line in app/routes.php
+ * Controller class that provides web access to ${get_singular(entity_name, True)} resource
+ *
+ * @todo: Add following line in app/routes.php
  * Route::resource('${entity_name}', '${get_singular(entity_name, True)}Controller');
  */
 class ${get_singular(entity_name, True)}Controller extends \BaseController {
 
+    // The service object
+	protected $${get_singular(entity_name, False)}Service;
+
 	protected $layout = 'layouts.master';
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+        $this->${get_singular(entity_name, False)}Service = new Services\${get_singular(entity_name, True)}Service();
+    }
 
 	/**
 	 * Display a listing of the resource.
@@ -38,7 +60,8 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function index()
 	{
-		$records = ${get_singular(entity_name, True)}::all();
+		$qparams = Input::all();
+		$records = ${service_call(entity_name, 'list', False)}($qparams);
 		$this->layout->content = View::make('${entity_name}.index')
 		    ->with('records', $records);
 	}
@@ -62,30 +85,17 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	{
 		$data = Input::all();
 
-		$validator = ${get_singular(entity_name, True)}::validator($data);
-        if ($validator->passes()) {
-            $record = new User();
-            $record->fill($data);
-
-            /*
-             * @todo: assign default values as needed
-             */
-            $now = new DateTime;
-            $now_str = $now->format('Y-m-d H:i:s');
-            $record->uuid = uniqid();
-            $record->created_dt = $now_str;
-            $record->updated_dt = $now_str;
-            */
-            $record->save();
-
-            // @todo: Redirect to proper URL
-            Session::flash('message', 'Successfully updated!');
-            return Redirect::to('${entity_name}');
-        } else {
-            // Redirecting to same form
-            return Redirect::to('${entity_name}/create')
-                ->withErrors($validator);
-                // Uncomment following line if applicable
+		try {
+            $user = ${service_call(entity_name, 'create', True)}($data);
+            Session::flash('message', 'Successfully created!');
+            return Redirect::to('users');
+        } catch (Services\ValidationException $ve) {
+            return Redirect::to('users/create')
+                ->withErrors($ve->getObject());
+                //->withInput(Input::except('password'));
+        } catch (Exception $e) {
+            return Redirect::to('users/create')
+                ->withErrors($e->getMessage());
                 //->withInput(Input::except('password'));
         }
 	}
@@ -98,7 +108,7 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function show($id)
 	{
-		$record = ${get_singular(entity_name, True)}::find($id);
+		$record = ${service_call(entity_name, 'find', True)}($id);
 
 		// show the view and pass the nerd to it
 		$this->layout->content = View::make('${entity_name}.show')
@@ -113,7 +123,7 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function edit($id)
 	{
-	    $record = ${get_singular(entity_name, True)}::find($id);
+	    $record = ${service_call(entity_name, 'find', True)}($id);
 
 		$this->layout->content = View::make('${entity_name}.edit')
 		    ->with('record', $record);
@@ -127,7 +137,6 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function update($id)
 	{
-	    // @todo: Validate input
 
 		$data = Input::all();
 		$validator = ${get_singular(entity_name, True)}::validator($data);
@@ -139,10 +148,14 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
             // @todo: Redirect to proper URL
             Session::flash('message', 'Successfully updated!');
             return Redirect::to('${entity_name}');
-        } else {
+        } catch (Services\ValidationException $ve) {
             return Redirect::to('${entity_name}/' . $id . '/edit')
-                ->withErrors($validator)
-                ->withInput(Input::except('password'));
+                ->withErrors($ve->getObject());
+                //->withInput(Input::except('password'));
+        } catch (Exception $e) {
+            return Redirect::to('${entity_name}/' . $id . '/edit')
+                ->withErrors($e->getMessage());
+                //->withInput(Input::except('password'));
         }
 	}
 
@@ -155,12 +168,15 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	public function destroy($id)
 	{
 		// delete
-		$record = ${get_singular(entity_name, True)}::find($id);
-		$record->delete();
+		$success = ${service_call(entity_name, 'destroy', True)}($id);
 
-		// redirect
-		Session::flash('message', 'Successfully deleted!');
-		return Redirect::to('${entity_name}');
+		if ($success) {
+            Session::flash('message', 'Successfully deleted!');
+            return Redirect::to('users');
+        } else {
+            Session::flash('message', 'Entry not found');
+            return Redirect::to('users');
+        }
 	}
 }
 % endfor

@@ -35,11 +35,14 @@
 
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
- * Add following line in app/routes.php
+ * Controller class that provides REST API to ${get_singular(entity_name, True)} resource
+ *
+ * @todo: Add following line in app/routes.php
  * Route::resource('${entity_name}', '${get_singular(entity_name, True)}Controller');
  */
 class ${get_singular(entity_name, True)}Controller extends \BaseController {
 
+    // The service object
 	protected $${get_singular(entity_name, False)}Service;
 
 	/**
@@ -56,7 +59,8 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function index()
 	{
-		$records = ${service_call(entity_name, 'list', False)}();
+	    $qparams = Input::all();
+		$records = ${service_call(entity_name, 'list', False)}($qparams);
 		return $list;
 	}
 
@@ -78,16 +82,15 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	{
 		$data = Input::all();
 
-		$validator = ${service_call(entity_name, 'create', True)}($data);
-
-        if (empty($validator)) {
+        try {
+            $user = ${service_call(entity_name, 'create', True)}($data);
             return Response::json(array(
-                'error' => false),
+                'sid' => $user->sid),
                 200
             );
-        } else {
+        } catch (Exception $e) {
             return Response::json(array(
-                'error' => $validator->messages()->getMessages()),
+                'error' => $e->getMessage()),
                 400
             );
         }
@@ -101,7 +104,7 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	 */
 	public function show($id)
 	{
-		$record = ${service_call(entity_name, 'get', True)}($id);
+		$record = ${service_call(entity_name, 'find', True)}($id);
 
 		return $record;
 	}
@@ -126,16 +129,16 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	public function update($id)
 	{
 		$data = Input::all();
-		$validator = ${service_call(entity_name, 'update', True)}($id, $data);
 
-        if (empty($validator)) {
+        try {
+            $user = ${service_call(entity_name, 'update', True)}($id, $data);
             return Response::json(array(
-                'error' => false),
+                'sid' => $user->sid),
                 200
             );
-        } else {
+        } catch (Exception $e) {
             return Response::json(array(
-                'error' => $validator->messages()->getMessages()),
+                'error' => $e->getMessage()),
                 400
             );
         }
@@ -150,7 +153,7 @@ class ${get_singular(entity_name, True)}Controller extends \BaseController {
 	public function destroy($id)
 	{
 		// delete
-		$result = ${service_call(entity_name, 'update', True)}($id, $data);
+		$result = ${service_call(entity_name, 'destroy', True)}($id, $data);
 
 		if ($result) {
 		    return Response::json(array(

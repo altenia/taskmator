@@ -86,7 +86,7 @@ class ${get_singular(entity_name, True)}Service extends \BaseService {
 	 * @param  int $id  The primary key for the search
 	 * @return ${get_singular(entity_name, True)}
 	 */
-	public function get${name_for_suffix(entity_name)}($id)
+	public function find${name_for_suffix(entity_name)}($id)
 	{
 		$record = \${get_singular(entity_name, True)}::find($id);
 
