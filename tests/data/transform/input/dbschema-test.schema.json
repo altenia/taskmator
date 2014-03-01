@@ -14,7 +14,7 @@
         ]
     },
     "entities": {
-        "users": {
+        "user": {
             "fields":[
                 {"name":"sid", "type":"auto", "is_nullable": true, "validation": "required|alpha_num|min:6"},
                 {"name":"domain_id", "type":"string", "length":64},
@@ -47,8 +47,8 @@
                 {"name":"params_text", "type":"text"}
             ]
         },
-        "categories": {
-            "singular": "category",
+        "category": {
+            "plural": "categories",
 			"fields": [
                 {"name":"sid", "type":"auto", "is_nullable": true},
                 {"name":"create_dt", "type":"datetime"},
@@ -67,7 +67,7 @@
                 {"name":"creator_dto", "type":"com.seednia.module.core.user.dto.UserDto"}
 			]
 		},
-        "organizations": {
+        "organization": {
             "fields":[
                 {"name":"sid", "type":"long", "is_nullable": false},
                 {"name":"domain_id", "type":"string", "length":64},

@@ -28,12 +28,13 @@
  *
  */
 
+namespace Service;
 
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
  * Service class that provides business logic for ${get_singular(entity_name, True)}
  */
-class ${get_singular(entity_name, True)}Service extends \BaseService {
+class ${get_singular(entity_name, True)}Service extends BaseService {
 
 	/**
 	 * Returns list of the records.

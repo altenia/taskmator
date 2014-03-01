@@ -57,9 +57,9 @@ class ${get_singular(entity_name, True)} extends Eloquent {
 	/**
 	 * To disable created_at and updated_at.
 	 *
-	 * @var string
+	 * @var boolean
 	 */
-	public static $timestamps = false;
+	public $timestamps = false;
 
 
     /**

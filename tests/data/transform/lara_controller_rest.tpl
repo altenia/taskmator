@@ -1,6 +1,4 @@
 <%
-    import re
-
     # Convert underscore to camelCase
     under_pat = re.compile(r'_([a-z])')
     def underscore_to_camel(text):
@@ -14,16 +12,25 @@
             retval = retval.capitalize();
         return retval
 
+    def get_plural(name, capitalize = False):
+        retval = name
+        if (name[len(name)-1] != 's'):
+            if (name[len(name)-1] == 'y'):
+                name = name[:len(name)-1] + 'ie'
+            retval = name + 's'
+        if (capitalize):
+            retval = retval.capitalize();
+        return retval
 
     # Camel and capitalize
-    def name_for_suffix(name, singular=True):
+    def name_for_suffix(name, plural=True):
         namex = name
-        if (singular):
-            namex = get_singular(name);
+        if (plural):
+            namex = get_plural(name);
         return underscore_to_camel(namex).capitalize();
 
-    def service_call(name, method, singular=True):
-        return '$this->' + get_singular(entity_name, False) + 'Service->' + method + name_for_suffix(entity_name, singular);
+    def service_call(name, method, plural=True):
+        return '$this->' + entity_name + 'Service->' + method + name_for_suffix(entity_name, plural);
 
 %><?php
 /**
@@ -35,21 +42,21 @@
 
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
- * Controller class that provides REST API to ${get_singular(entity_name, True)} resource
+ * Controller class that provides REST API to ${entity_name.capitalize()} resource
  *
  * @todo: Add following line in app/routes.php
- * Route::resource('${entity_name}', '${get_singular(entity_name, True)}Controller');
+ * Route::resource('${entity_name}', '${entity_name.capitalize()}Controller');
  */
-class ${get_singular(entity_name, True)}Controller extends \BaseController {
+class ${entity_name.capitalize()}Controller extends \BaseController {
 
     // The service object
-	protected $${get_singular(entity_name, False)}Service;
+	protected $${entity_name}Service;
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-        $this->${get_singular(entity_name, False)}Service = new Services\${get_singular(entity_name, True)}Service();
+        $this->${entity_name}Service = new Service\${entity_name.capitalize()}Service();
     }
 
 	/**
