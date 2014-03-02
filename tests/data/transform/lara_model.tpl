@@ -31,7 +31,7 @@ class ${common.to_camelcase(entity_name, True)} extends Eloquent {
 	 *
 	 * @var string
 	 */
-    protected $table = '${entity_name}';
+    protected $table = '${common.get_plural(entity_name)}';
 
     /**
 	 * The primary key column name.
@@ -56,22 +56,32 @@ class ${common.to_camelcase(entity_name, True)} extends Eloquent {
     protected $fillable = array(${get_fillables(entity_def['fields'])});
 
     /**
-     * Validation rules
+     * Validation rules for creation
      *
      * @var array
      */
-    private static $validation_rules = array(
+    private static $validation_rules_create = array(
+        ${ get_validation_entries(entity_def['fields']) }
+    	);
+
+    /**
+     * Validation rules for update
+     *
+     * @var array
+     */
+    private static $validation_rules_udpate = array(
         ${ get_validation_entries(entity_def['fields']) }
     	);
 
     /**
      * Returns the validation object
      */
-    public static function validator($fields)
+    public static function validator($fields, $is_create = true)
     {
-    	$validator = Validator::make($fields, static::$validation_rules);
+    	$rules = ($is_create) ? static::$validation_rules_create : static::$validation_rules_update;
+        $validator = Validator::make($fields, $rules);
 
-    	return $validator;
+        return $validator;
     }
 
 % if ('relations' in entity_def):

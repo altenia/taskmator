@@ -89,13 +89,13 @@ class ${common.to_camelcase(entity_name, True)}Controller extends \BaseControlle
 		try {
             $record = ${service_call(entity_name, 'create', False)}($data);
             Session::flash('message', 'Successfully created!');
-            return Redirect::to('{entity_name}');
+            return Redirect::to('${get_plural(entity_name)}');
         } catch (Services\ValidationException $ve) {
-            return Redirect::to('${entity_name}/create')
+            return Redirect::to('${get_plural(entity_name)}/create')
                 ->withErrors($ve->getObject());
                 //->withInput(Input::except('password'));
         } catch (Exception $e) {
-            return Redirect::to('${entity_name}/create')
+            return Redirect::to('${get_plural(entity_name)}/create')
                 ->withErrors($e->getMessage());
                 //->withInput(Input::except('password'));
         }
@@ -143,8 +143,6 @@ class ${common.to_camelcase(entity_name, True)}Controller extends \BaseControlle
 
         try {
             $record = ${service_call(entity_name, 'update', False)}($id, $data);
-            Session::flash('message', 'Successfully updated!');
-            return Redirect::to('${get_plural(entity_name)}');
 
             // @todo: Redirect to proper URL
             Session::flash('message', 'Successfully updated!');

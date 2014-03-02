@@ -53,10 +53,9 @@ class ${common.to_camelcase(entity_name, True)}Service extends BaseService {
             $record->created_dt = $now_str;
             $record->updated_dt = $now_str;
             $record->save();
-            return null;
+            return $record;
         } else {
-            // Redirecting to same form
-            return $validator;
+            throw new ValidationException($validator);
         }
 	}
 
@@ -91,9 +90,9 @@ class ${common.to_camelcase(entity_name, True)}Service extends BaseService {
             $now_str = $now->format('Y-m-d H:i:s');
             $record->updated_dt = $now_str;
             $record->save();
-            return null;
+            return $record;
         } else {
-            return $validator;
+            throw new ValidationException($validator);
         }
 	}
 

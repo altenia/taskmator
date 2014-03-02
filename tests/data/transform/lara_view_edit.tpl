@@ -18,7 +18,7 @@
 {{ HTML::ul($errors->all()) }}
 
 <!-- @todo: Make sure that the primaryKey column name is sid -->
-{{ Form::model($record, array('route' => array('${entity_name}.update', $record->sid), 'method' => 'PUT', 'class' => 'form-horizontal')) }}
+{{ Form::model($record, array('route' => array('${common.get_plural(entity_name)}.update', $record->sid), 'method' => 'PUT', 'class' => 'form-horizontal')) }}
 
 <!--
     @todo: Remove non-editable fields.

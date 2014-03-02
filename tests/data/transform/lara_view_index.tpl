@@ -24,6 +24,7 @@
 % for field in entity_def['fields']:
 			<td>{{ Lang::get('${entity_name}.${field["name"]}') }}</td>
 % endfor
+            <td>Actions</td>
 		</tr>
 	</thead>
 	<tbody>
@@ -36,18 +37,18 @@
 			<!-- we will also add show, edit, and delete buttons -->
 			<td>
 
-				<!-- delete the record (uses the destroy method DESTROY /${entity_name}/{id} -->
-                {{ Form::open(array('url' => '${entity_name}/' . $value->sid, 'class' => 'pull-right')) }}
+				<!-- show the record (uses the show method found at GET /${common.get_plural(entity_name)}/{id} -->
+				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
+				<a class="btn btn-small btn-success" href="{{ URL::to('${common.get_plural(entity_name)}/' . $value->sid) }}">Show</a>
+
+				<!-- edit this record (uses the edit method found at GET /${common.get_plural(entity_name)}/{id}/edit -->
+				<a class="btn btn-small btn-info" href="{{ URL::to('${common.get_plural(entity_name)}/' . $value->sid . '/edit') }}">Edit</a>
+
+				<!-- delete the record (uses the destroy method DESTROY /${common.get_plural(entity_name)}/{id} -->
+                {{ Form::open(array('url' => '${entity_name}/' . $value->sid, 'class' => '')) }}
                     {{ Form::hidden('_method', 'DELETE') }}
                     {{ Form::submit('Delete', array('class' => 'btn btn-warning')) }}
                 {{ Form::close() }}
-
-				<!-- show the record (uses the show method found at GET /${entity_name}/{id} -->
-				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
-				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->sid) }}">Show this ${entity_name}</a>
-
-				<!-- edit this record (uses the edit method found at GET /${entity_name}/{id}/edit -->
-				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->sid . '/edit') }}">Edit this ${entity_name}</a>
 
 			</td>
 		</tr>

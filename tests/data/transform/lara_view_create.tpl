@@ -17,7 +17,7 @@
 {{ HTML::ul($errors->all()) }}
 
 // Make sure that the primaryKey column name is sid
-{{ Form::open(array('url' => '${entity_name}', 'class' => 'form-horizontal')) }}
+{{ Form::open(array('url' => '${common.get_plural(entity_name)}', 'class' => 'form-horizontal')) }}
 
 % for field in entity_def['fields']:
     % if is_fillable(field):
