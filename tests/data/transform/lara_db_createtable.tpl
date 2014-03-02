@@ -1,4 +1,4 @@
-<%
+<%namespace name="common" file="/codegen_common.tpl"/><%
     def get_type(field):
         type = field['type']
         if (type == 'auto'):
@@ -60,7 +60,7 @@ use Illuminate\Database\Migrations\Migration;
  * Then copy/paste the content to the file generated on app/database/migrations/<timestamp>-create_${entity_name}_table.php
  * To run the migration script do: $php artisan migrate
  */
-class Create${entity_name.capitalize()}Table extends Migration {
+class Create${common.to_camelcase(entity_name, True, True)}Table extends Migration {
 
 	/**
 	 * Run the migrations.
@@ -69,7 +69,7 @@ class Create${entity_name.capitalize()}Table extends Migration {
 	 */
 	public function up()
 	{
-		Schema::create('${entity_name}', function(Blueprint $table)
+		Schema::create('${common.get_plural(entity_name)}', function(Blueprint $table)
 		{
 % for field in entity_def['fields']:
 			$table->${get_type(field)}('${field["name"]}'${get_length(field)})${get_modifiers(field)};
@@ -89,7 +89,7 @@ class Create${entity_name.capitalize()}Table extends Migration {
 	 */
 	public function down()
 	{
-		Schema::dropIfExists('${entity_name}');
+		Schema::dropIfExists('${common.get_plural(entity_name)}');
 	}
 
 }

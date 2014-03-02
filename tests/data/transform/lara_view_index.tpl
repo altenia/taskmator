@@ -1,18 +1,4 @@
-<%
-    import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
+<%namespace name="common" file="/codegen_common.tpl"/><%
 
     def is_fillable(field):
         if (field['type'] == 'auto'):
@@ -58,10 +44,10 @@
 
 				<!-- show the record (uses the show method found at GET /${entity_name}/{id} -->
 				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
-				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->sid) }}">Show this ${get_singular(entity_name)}</a>
+				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->sid) }}">Show this ${entity_name}</a>
 
 				<!-- edit this record (uses the edit method found at GET /${entity_name}/{id}/edit -->
-				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->sid . '/edit') }}">Edit this ${get_singular(entity_name)}</a>
+				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->sid . '/edit') }}">Edit this ${entity_name}</a>
 
 			</td>
 		</tr>

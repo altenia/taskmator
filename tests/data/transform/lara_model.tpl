@@ -1,18 +1,4 @@
-<%
-    import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
+<%namespace name="common" file="/codegen_common.tpl"/><%
 
     # comma separated list of fillable fields
     def get_fillables(fields):
@@ -38,7 +24,7 @@
  */
 
 % for entity_name, entity_def in model['entities'].iteritems():
-class ${get_singular(entity_name, True)} extends Eloquent {
+class ${common.to_camelcase(entity_name, True)} extends Eloquent {
 
     /**
 	 * The database table used by the model.
@@ -92,7 +78,7 @@ class ${get_singular(entity_name, True)} extends Eloquent {
 % for relation in entity_def['relations']:
     public function ${relation['entity']}()
     {
-        return $this->${underscore_to_camel(relation['kind'])}('${get_singular(relation['entity'], True)}');
+        return $this->${common.to_camelcase(relation['kind'])}('${relation['entity'].capitalize()}');
     }
 % endfor
 % endif

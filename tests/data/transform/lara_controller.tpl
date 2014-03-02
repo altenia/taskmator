@@ -1,18 +1,5 @@
-<%
+<%namespace name="common" file="/codegen_common.tpl"/><%
     import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
 
     def get_plural(name, capitalize = False):
         retval = name
@@ -24,15 +11,19 @@
             retval = retval.capitalize();
         return retval
 
-    # Camel and capitalize
-    def name_for_suffix(name, plural=True):
-        namex = name
-        if (plural):
-            namex = get_plural(name);
-        return underscore_to_camel(namex).capitalize();
+    # Convert underscore to camelCase
+    under_pat = re.compile(r'_([a-z])')
+    def to_camelcase(text, capitalize=False, pluralize=False):
+        retval = text
+        if (pluralize):
+            retval = get_plural(retval, capitalize)
+        elif (capitalize):
+            retval = retval.capitalize()
+        return under_pat.sub(lambda x: x.group(1).upper(), retval)
 
-    def service_call(name, method, plural=True):
-        return '$this->' + entity_name + 'Service->' + method + name_for_suffix(entity_name, plural);
+    # Generate service method invocation code
+    def service_call(name, method, pluralize=True):
+        return '$this->' + to_camelcase(entity_name) + 'Service->' + method + to_camelcase(entity_name, True, pluralize);
 
 %><?php
 /**
@@ -44,15 +35,15 @@
 
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
- * Controller class that provides web access to ${entity_name.capitalize()} resource
+ * Controller class that provides web access to ${common.to_camelcase(entity_name, True)} resource
  *
  * @todo: Add following line in app/routes.php
- * Route::resource('${entity_name}', '${entity_name.capitalize()}Controller');
+ * Route::resource('${entity_name}', '${common.to_camelcase(entity_name, True)}Controller');
  */
-class ${entity_name.capitalize()}Controller extends \BaseController {
+class ${common.to_camelcase(entity_name, True)}Controller extends \BaseController {
 
     // The service object
-	protected $${entity_name}Service;
+	protected $${common.to_camelcase(entity_name)}Service;
 
 	protected $layout = 'layouts.master';
 
@@ -60,7 +51,7 @@ class ${entity_name.capitalize()}Controller extends \BaseController {
 	 * Constructor
 	 */
 	public function __construct() {
-        $this->${entity_name}Service = new Service\${entity_name.capitalize()}Service();
+        $this->${common.to_camelcase(entity_name)}Service = new Service\${common.to_camelcase(entity_name, True)}Service();
     }
 
 	/**
@@ -96,9 +87,9 @@ class ${entity_name.capitalize()}Controller extends \BaseController {
 		$data = Input::all();
 
 		try {
-            $user = ${service_call(entity_name, 'create', False)}($data);
+            $record = ${service_call(entity_name, 'create', False)}($data);
             Session::flash('message', 'Successfully created!');
-            return Redirect::to('users');
+            return Redirect::to('{entity_name}');
         } catch (Services\ValidationException $ve) {
             return Redirect::to('${entity_name}/create')
                 ->withErrors($ve->getObject());
@@ -151,19 +142,19 @@ class ${entity_name.capitalize()}Controller extends \BaseController {
 		$data = Input::all();
 
         try {
-            $user = ${service_call(entity_name, 'update', False)}($id, $data);
+            $record = ${service_call(entity_name, 'update', False)}($id, $data);
             Session::flash('message', 'Successfully updated!');
-            return Redirect::to('${entity_name}');
+            return Redirect::to('${get_plural(entity_name)}');
 
             // @todo: Redirect to proper URL
             Session::flash('message', 'Successfully updated!');
-            return Redirect::to('${entity_name}');
+            return Redirect::to('${get_plural(entity_name)}');
         } catch (Services\ValidationException $ve) {
-            return Redirect::to('${entity_name}/' . $id . '/edit')
+            return Redirect::to('${get_plural(entity_name)}/' . $id . '/edit')
                 ->withErrors($ve->getObject());
                 //->withInput(Input::except('password'));
         } catch (Exception $e) {
-            return Redirect::to('${entity_name}/' . $id . '/edit')
+            return Redirect::to('${get_plural(entity_name)}/' . $id . '/edit')
                 ->withErrors($e->getMessage());
                 //->withInput(Input::except('password'));
         }
@@ -182,10 +173,10 @@ class ${entity_name.capitalize()}Controller extends \BaseController {
 
 		if ($success) {
             Session::flash('message', 'Successfully deleted!');
-            return Redirect::to('users');
+            return Redirect::to('${get_plural(entity_name)}');
         } else {
             Session::flash('message', 'Entry not found');
-            return Redirect::to('users');
+            return Redirect::to('${get_plural(entity_name)}');
         }
 	}
 }

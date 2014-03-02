@@ -1,26 +1,5 @@
-<%
-    import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
-
-    # Camel and capitalize
-    def name_for_suffix(name, singular=True):
-        namex = name
-        if (singular):
-            namex = get_singular(name);
-        return underscore_to_camel(namex).capitalize();
-
+<%namespace name="common" file="/codegen_common.tpl"/><%
+    # Python code here
 %><?php
 /**
  * Models from schema: ${ model['schema-name'] } version ${ model['version'] }
@@ -32,9 +11,9 @@ namespace Service;
 
 % for entity_name, entity_def in model['entities'].iteritems():
 /**
- * Service class that provides business logic for ${get_singular(entity_name, True)}
+ * Service class that provides business logic for ${entity_name}
  */
-class ${get_singular(entity_name, True)}Service extends BaseService {
+class ${common.to_camelcase(entity_name, True)}Service extends BaseService {
 
 	/**
 	 * Returns list of the records.
@@ -44,9 +23,9 @@ class ${get_singular(entity_name, True)}Service extends BaseService {
 	 * @param int   $limit        Maximum number of records to retrieve
 	 * @return Response
 	 */
-	public function list${name_for_suffix(entity_name, False)}($queryParams, $offset = 0, $limit=100)
+	public function list${common.to_camelcase(entity_name, True, True)}($queryParams, $offset = 0, $limit=100)
 	{
-		$records = \${get_singular(entity_name, True)}::all();
+		$records = \${common.to_camelcase(entity_name, True)}::all();
 		return $records;
 	}
 
@@ -57,12 +36,12 @@ class ${get_singular(entity_name, True)}Service extends BaseService {
 	 * @param array $data  Parameters used for creating a new record
 	 * @return mixed  null if successful, validation object validation fails
 	 */
-	public function create${name_for_suffix(entity_name)}($data)
+	public function create${common.to_camelcase(entity_name, True)}($data)
 	{
 
-		$validator = \${get_singular(entity_name, True)}::validator($data);
+		$validator = \${common.to_camelcase(entity_name, True)}::validator($data);
         if ($validator->passes()) {
-            $record = new \${get_singular(entity_name, True)}();
+            $record = new \${common.to_camelcase(entity_name, True)}();
             $record->fill($data);
 
             /*
@@ -85,11 +64,11 @@ class ${get_singular(entity_name, True)}Service extends BaseService {
 	 * Retrieves a single record.
 	 *
 	 * @param  int $id  The primary key for the search
-	 * @return ${get_singular(entity_name, True)}
+	 * @return ${common.to_camelcase(entity_name, True)}
 	 */
-	public function find${name_for_suffix(entity_name)}($id)
+	public function find${common.to_camelcase(entity_name, True)}($id)
 	{
-		$record = \${get_singular(entity_name, True)}::find($id);
+		$record = \${common.to_camelcase(entity_name, True)}::find($id);
 
 		return $record;
 	}
@@ -101,11 +80,11 @@ class ${get_singular(entity_name, True)}Service extends BaseService {
 	 * @param  array $data  The data of the update
 	 * @return mixed null if successful, validation if validation error
 	 */
-	public function update${name_for_suffix(entity_name)}($id, $data)
+	public function update${common.to_camelcase(entity_name, True)}($id, $data)
 	{
-		$validator = \${get_singular(entity_name, True)}::validator($data);
+		$validator = \${common.to_camelcase(entity_name, True)}::validator($data);
         if ($validator->passes()) {
-            $record = \${get_singular(entity_name, True)}::find($id);
+            $record = \${common.to_camelcase(entity_name, True)}::find($id);
             $record->fill($data);
 
             $now = new \DateTime;
@@ -124,10 +103,10 @@ class ${get_singular(entity_name, True)}Service extends BaseService {
 	 * @param  int  $id
 	 * @return bool true if deleted, false otherwise
 	 */
-	public function destroy${name_for_suffix(entity_name)}($id)
+	public function destroy${common.to_camelcase(entity_name, True)}($id)
 	{
 		// delete
-		$record = \${get_singular(entity_name, True)}::find($id);
+		$record = \${common.to_camelcase(entity_name, True)}::find($id);
 		if (!empty($record)) {
 		    $record->delete();
 		    return true;

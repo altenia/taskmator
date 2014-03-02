@@ -14,7 +14,7 @@
         ]
     },
     "entities": {
-        "user": {
+        "user_info": {
             "fields":[
                 {"name":"sid", "type":"auto", "is_nullable": true, "validation": "required|alpha_num|min:6"},
                 {"name":"domain_id", "type":"string", "length":64},
