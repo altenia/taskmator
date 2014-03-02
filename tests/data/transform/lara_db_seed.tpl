@@ -47,7 +47,7 @@ class ${common.to_camelcase(common.get_plural(entity_name, True))}TableSeeder ex
             )
         );
         // @codgen: Uncomment this if you want to use the DB::table API
-        //DB::table('${common.get_plural(entity_name)}')->insert($users);
+        //DB::table('${common.get_plural(entity_name)}')->insert($${common.get_plural(entity_name)});
         $${entity_name}Svc = new \Service\${common.to_camelcase(entity_name, True, False)}Service();
         foreach ($${common.get_plural(entity_name)} as $${entity_name}) {
             $${entity_name}Svc->create${common.to_camelcase(entity_name, True, False)}($${entity_name});
