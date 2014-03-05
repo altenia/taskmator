@@ -45,7 +45,7 @@
 				<a class="btn btn-small btn-info" href="{{ URL::to('${common.get_plural(entity_name)}/' . $value->sid . '/edit') }}">Edit</a>
 
 				<!-- delete the record (uses the destroy method DESTROY /${common.get_plural(entity_name)}/{id} -->
-                {{ Form::open(array('url' => '${entity_name}/' . $value->sid, 'class' => '')) }}
+                {{ Form::open(array('url' => '${common.get_plural(entity_name)}/' . $value->sid, 'class' => '')) }}
                     {{ Form::hidden('_method', 'DELETE') }}
                     {{ Form::submit('Delete', array('class' => 'btn btn-warning')) }}
                 {{ Form::close() }}
@@ -55,6 +55,12 @@
 	@endforeach
 	</tbody>
 </table>
+
+<div class="text-center">
+    <div class="pagination">
+<?php echo $records->appends($qparams)->links(); ?>
+	</div>
+</div>
 
 </div> <!-- container -->
 @show

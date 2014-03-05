@@ -59,9 +59,12 @@ class ${common.to_camelcase(entity_name, True)}ApiController extends \BaseContro
 	 */
 	public function index()
 	{
-	    $qparams = Input::all();
-		$records = ${service_call(entity_name, 'list', True)}($qparams);
-		return $list;
+		$qparams = Input::except(array('_offset', '_limit'));
+		$offset = Input::get('_offset', 0);
+		$limit = Input::get('_limit', 20);
+
+		$records = ${service_call(entity_name, 'list', True)}($qparams, $offset, $limit);
+		return $records;
 	}
 
 	/**

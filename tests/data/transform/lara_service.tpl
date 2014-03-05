@@ -25,8 +25,39 @@ class ${common.to_camelcase(entity_name, True)}Service extends BaseService {
 	 */
 	public function list${common.to_camelcase(entity_name, True, True)}($queryParams, $offset = 0, $limit=100)
 	{
-		$records = \${common.to_camelcase(entity_name, True)}::all();
+		$query = \${common.to_camelcase(entity_name, True)}::query();
+		$query = $this->parseQueryParams($query, $queryParams);
+        $records = $query->skip($offset)->take($limit)->get();
 		return $records;
+	}
+
+	/**
+	 * Returns paginated list of the records.
+	 *
+	 * @param array $queryParams  Parameters used for querying
+	 * @param int   $page_size    The max number of entries shown per page
+	 * @return Response
+	 */
+	public function paginate${common.to_camelcase(entity_name, True, True)}($queryParams, $page_size = 20)
+	{
+		$query = \${common.to_camelcase(entity_name, True)}::query();
+		$query = $this->parseQueryParams($query, $queryParams);
+        $records = $query->paginate($page_size);
+		return $records;
+	}
+
+    /**
+	 * Returns the count of records satisfying the critieria.
+	 *
+	 * @param array $queryParams  Parameters used for querying
+	 * @return int number of records that satisfied the criteria
+	 */
+	public function count{common.to_camelcase(entity_name, True, True)}($queryParams)
+	{
+		$query = \${common.to_camelcase(entity_name, True)}::query();
+		$query = $this->parseQueryParams($query, $queryParams);
+        $count = $query->count();
+		return $count;
 	}
 
 	/**

@@ -61,10 +61,20 @@ class ${common.to_camelcase(entity_name, True)}Controller extends \BaseControlle
 	 */
 	public function index()
 	{
-		$qparams = Input::all();
-		$records = ${service_call(entity_name, 'list', True)}($qparams);
+		$qparams = Input::except(array('page', self::PAGE_SIZE_PNAME, '_offset', '_limit'));
+		$offset = Input::get('_offset', 0);
+		$limit = Input::get('_limit', 20);
+		$page_size = Input::get(self::PAGE_SIZE_PNAME, 20);
+
+		$records = ${service_call(entity_name, 'paginate', True)}($qparams, $page_size);
+		$count = ${service_call(entity_name, 'count', True)}($qparams);
+
+        // $qparams is used by view to generate query string
+		$qparams[self::PAGE_SIZE_PNAME] = $page_size;
 		$this->layout->content = View::make('${entity_name}.index')
-		    ->with('records', $records);
+		    ->with('qparams', $qparams)
+		    ->with('records', $records)
+		    ->with('count', $count);
 	}
 
 	/**
