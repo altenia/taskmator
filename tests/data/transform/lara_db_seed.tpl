@@ -39,7 +39,7 @@ class ${common.to_camelcase(common.get_plural(entity_name, True))}TableSeeder ex
 	    //DB::table('${common.get_plural(entity_name)}')->delete();
 	    $now = new \DateTime;
         $now_str = $now->format('Y-m-d H:i:s');
-	    $${common.get_plural(entity_name)} = (
+	    $${common.get_plural(entity_name)} = array(
             array(
 % for field in entity_def['fields']:
 			'${field["name"]}' => ${get_sample_val(field)},

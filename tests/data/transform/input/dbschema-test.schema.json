@@ -45,6 +45,10 @@
                 {"name":"active_project_sid", "type":"long"},
                 {"name":"type", "type":"string", "length":16},
                 {"name":"params_text", "type":"text"}
+            ],
+            "indexes":[
+                {"columns":["id"], "type":"unique"},
+                {"columns":["first_name", "last_name"]}
             ]
         },
         "category": {

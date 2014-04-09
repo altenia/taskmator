@@ -28,6 +28,16 @@
 
         return ''.join(modifs)
 
+    # Returns the type of index (primary, unique, or index)
+    def get_index_type(index):
+        return index['type'] if ('type' in index) else 'index'
+
+    def get_index_cols(index):
+        colnum = len(index['columns'])
+        if (colnum > 1):
+            return "array('" + "','".join(index['columns']) + "')"
+        return "'" + index['columns'][0] + "'"
+
     def get_constraint(constr):
         return constr['kind']
 
@@ -74,6 +84,11 @@ class Create${common.to_camelcase(entity_name, True, True)}Table extends Migrati
 % for field in entity_def['fields']:
 			$table->${get_type(field)}('${field["name"]}'${get_length(field)})${get_modifiers(field)};
 % endfor
+% if ('indexes' in entity_def):
+% for index in entity_def['indexes']:
+		    $table->${get_index_type(index)}(${get_index_cols(index)});
+% endfor
+% endif
 % if ('constraints' in entity_def):
 % for constr in entity_def['constraints']:
 		    $table->${get_constraint(constr)}('${get_constraint_param(constr)}')${get_constraint_modifiers(constr)};
