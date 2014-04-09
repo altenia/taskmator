@@ -6,6 +6,8 @@ from taskmator.manager import TaskManager
 
 
 class MainApp:
+    EXIT_CODE_OK = 0
+    EXIT_CODE_ERROR = -1
 
     logger = logging.getLogger("taskmator")
     def __init__(self):
@@ -26,13 +28,17 @@ class MainApp:
         #logger.setLevel()
 
         task_manager = TaskManager()
+        exit_code = self.EXIT_CODE_OK
         try:
             context = task_manager.start_task(args.file)
         except:
-            e = sys.exc_info()[0]
-            self.logger.error(e)
+            exit_code = self.EXIT_CODE_ERROR
+            #e = sys.exc_info()[0]
+            #self.logger.error(e)
+            self.logger.exception("Error while running task!")
 
-        sys.exit(0)
+        sys.exit(exit_code)
 
-main_app = MainApp()
-main_app.execute()
+if __name__ == "__main__":
+    main_app = MainApp()
+    main_app.execute()

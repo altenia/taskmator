@@ -15,6 +15,7 @@ from taskmator.task.core import Task
 class TransformTask(Task):
     """
     Class that transform a json into code using a template
+    Uses mako as template engine for transformation
     """
 
     logger = logging.getLogger(__name__)

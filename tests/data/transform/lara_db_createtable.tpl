@@ -1,4 +1,4 @@
-<%
+<%namespace name="common" file="/codegen_common.tpl"/><%
     def get_type(field):
         type = field['type']
         if (type == 'auto'):
@@ -27,6 +27,16 @@
             modifs.append('->default(\''+ str(field['default']) + '\')')
 
         return ''.join(modifs)
+
+    # Returns the type of index (primary, unique, or index)
+    def get_index_type(index):
+        return index['type'] if ('type' in index) else 'index'
+
+    def get_index_cols(index):
+        colnum = len(index['columns'])
+        if (colnum > 1):
+            return "array('" + "','".join(index['columns']) + "')"
+        return "'" + index['columns'][0] + "'"
 
     def get_constraint(constr):
         return constr['kind']
@@ -60,7 +70,7 @@ use Illuminate\Database\Migrations\Migration;
  * Then copy/paste the content to the file generated on app/database/migrations/<timestamp>-create_${entity_name}_table.php
  * To run the migration script do: $php artisan migrate
  */
-class Create${entity_name.capitalize()}Table extends Migration {
+class Create${common.to_camelcase(entity_name, True, True)}Table extends Migration {
 
 	/**
 	 * Run the migrations.
@@ -69,11 +79,16 @@ class Create${entity_name.capitalize()}Table extends Migration {
 	 */
 	public function up()
 	{
-		Schema::create('${entity_name}', function(Blueprint $table)
+		Schema::create('${common.get_plural(entity_name)}', function(Blueprint $table)
 		{
 % for field in entity_def['fields']:
 			$table->${get_type(field)}('${field["name"]}'${get_length(field)})${get_modifiers(field)};
 % endfor
+% if ('indexes' in entity_def):
+% for index in entity_def['indexes']:
+		    $table->${get_index_type(index)}(${get_index_cols(index)});
+% endfor
+% endif
 % if ('constraints' in entity_def):
 % for constr in entity_def['constraints']:
 		    $table->${get_constraint(constr)}('${get_constraint_param(constr)}')${get_constraint_modifiers(constr)};
@@ -89,7 +104,7 @@ class Create${entity_name.capitalize()}Table extends Migration {
 	 */
 	public function down()
 	{
-		Schema::dropIfExists('${entity_name}');
+		Schema::dropIfExists('${common.get_plural(entity_name)}');
 	}
 
 }

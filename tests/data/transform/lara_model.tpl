@@ -1,18 +1,4 @@
-<%
-    import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
+<%namespace name="common" file="/codegen_common.tpl"/><%
 
     # comma separated list of fillable fields
     def get_fillables(fields):
@@ -38,14 +24,14 @@
  */
 
 % for entity_name, entity_def in model['entities'].iteritems():
-class ${get_singular(entity_name, True)} extends Eloquent {
+class ${common.to_camelcase(entity_name, True)} extends Eloquent {
 
     /**
 	 * The database table used by the model.
 	 *
 	 * @var string
 	 */
-    protected $table = '${entity_name}';
+    protected $table = '${common.get_plural(entity_name)}';
 
     /**
 	 * The primary key column name.
@@ -57,9 +43,9 @@ class ${get_singular(entity_name, True)} extends Eloquent {
 	/**
 	 * To disable created_at and updated_at.
 	 *
-	 * @var string
+	 * @var boolean
 	 */
-	public static $timestamps = false;
+	public $timestamps = false;
 
 
     /**
@@ -70,29 +56,39 @@ class ${get_singular(entity_name, True)} extends Eloquent {
     protected $fillable = array(${get_fillables(entity_def['fields'])});
 
     /**
-     * Validation rules
+     * Validation rules for creation
      *
      * @var array
      */
-    private static $validation_rules = array(
+    private static $validation_rules_create = array(
+        ${ get_validation_entries(entity_def['fields']) }
+    	);
+
+    /**
+     * Validation rules for update
+     *
+     * @var array
+     */
+    private static $validation_rules_udpate = array(
         ${ get_validation_entries(entity_def['fields']) }
     	);
 
     /**
      * Returns the validation object
      */
-    public static function validator($fields)
+    public static function validator($fields, $is_create = true)
     {
-    	$validator = Validator::make($fields, static::$validation_rules);
+    	$rules = ($is_create) ? static::$validation_rules_create : static::$validation_rules_update;
+        $validator = Validator::make($fields, $rules);
 
-    	return $validator;
+        return $validator;
     }
 
 % if ('relations' in entity_def):
 % for relation in entity_def['relations']:
     public function ${relation['entity']}()
     {
-        return $this->${underscore_to_camel(relation['kind'])}('${get_singular(relation['entity'], True)}');
+        return $this->${common.to_camelcase(relation['kind'])}('${relation['entity'].capitalize()}');
     }
 % endfor
 % endif

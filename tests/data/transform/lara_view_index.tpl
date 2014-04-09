@@ -1,18 +1,4 @@
-<%
-    import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
+<%namespace name="common" file="/codegen_common.tpl"/><%
 
     def is_fillable(field):
         if (field['type'] == 'auto'):
@@ -38,6 +24,7 @@
 % for field in entity_def['fields']:
 			<td>{{ Lang::get('${entity_name}.${field["name"]}') }}</td>
 % endfor
+            <td>Actions</td>
 		</tr>
 	</thead>
 	<tbody>
@@ -50,24 +37,30 @@
 			<!-- we will also add show, edit, and delete buttons -->
 			<td>
 
-				<!-- delete the record (uses the destroy method DESTROY /${entity_name}/{id} -->
-                {{ Form::open(array('url' => '${entity_name}/' . $value->sid, 'class' => 'pull-right')) }}
+				<!-- show the record (uses the show method found at GET /${common.get_plural(entity_name)}/{id} -->
+				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
+				<a class="btn btn-small btn-success" href="{{ URL::to('${common.get_plural(entity_name)}/' . $value->sid) }}">Show</a>
+
+				<!-- edit this record (uses the edit method found at GET /${common.get_plural(entity_name)}/{id}/edit -->
+				<a class="btn btn-small btn-info" href="{{ URL::to('${common.get_plural(entity_name)}/' . $value->sid . '/edit') }}">Edit</a>
+
+				<!-- delete the record (uses the destroy method DESTROY /${common.get_plural(entity_name)}/{id} -->
+                {{ Form::open(array('url' => '${common.get_plural(entity_name)}/' . $value->sid, 'class' => '')) }}
                     {{ Form::hidden('_method', 'DELETE') }}
                     {{ Form::submit('Delete', array('class' => 'btn btn-warning')) }}
                 {{ Form::close() }}
-
-				<!-- show the record (uses the show method found at GET /${entity_name}/{id} -->
-				<!-- @todo: Make sure that the 'id' is the correct primary key column on '$value->sid' -->
-				<a class="btn btn-small btn-success" href="{{ URL::to('${entity_name}/' . $value->sid) }}">Show this ${get_singular(entity_name)}</a>
-
-				<!-- edit this record (uses the edit method found at GET /${entity_name}/{id}/edit -->
-				<a class="btn btn-small btn-info" href="{{ URL::to('${entity_name}/' . $value->sid . '/edit') }}">Edit this ${get_singular(entity_name)}</a>
 
 			</td>
 		</tr>
 	@endforeach
 	</tbody>
 </table>
+
+<div class="text-center">
+    <div class="pagination">
+<?php echo $records->appends($qparams)->links(); ?>
+	</div>
+</div>
 
 </div> <!-- container -->
 @show

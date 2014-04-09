@@ -1,18 +1,4 @@
-<%
-    import re
-
-    # Convert underscore to camelCase
-    under_pat = re.compile(r'_([a-z])')
-    def underscore_to_camel(text):
-        return under_pat.sub(lambda x: x.group(1).upper(), text)
-
-    def get_singular(name, capitalize = True):
-        retval = name
-        if (name[len(name)-1] == 's'):
-            retval = name[0:len(name)-1]
-        if (capitalize):
-            retval = retval.capitalize();
-        return retval
+<%namespace name="common" file="/codegen_common.tpl"/><%
 
     def is_fillable(field):
         if (field['type'] == 'auto'):
@@ -31,7 +17,7 @@
 {{ HTML::ul($errors->all()) }}
 
 // Make sure that the primaryKey column name is sid
-{{ Form::open(array('url' => '${entity_name}', 'class' => 'form-horizontal')) }}
+{{ Form::open(array('url' => '${common.get_plural(entity_name)}', 'class' => 'form-horizontal')) }}
 
 % for field in entity_def['fields']:
     % if is_fillable(field):
